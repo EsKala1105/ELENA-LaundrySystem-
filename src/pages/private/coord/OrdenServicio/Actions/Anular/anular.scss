@@ -1,0 +1,35 @@
+.container-anulacion {
+    padding: 10px;
+    .body-a {
+        display: grid;
+        gap: 15px;
+        .content-anuacion {
+            position: relative;
+            display: flex;
+            .description-info {
+                outline: none;
+                resize: none;
+                margin: auto;
+                width: 80%;
+                max-height: 100%;
+                font-size: 16px;
+                font-family: "Lato", sans-serif;
+                line-height: 20px;
+                padding: 8px;
+                box-sizing: border-box;
+                border: 1px solid rgb(70, 69, 69);
+                transition: border 0.2s ease;
+                will-change: border;
+                background-color: transparent;
+                &:focus {
+                    border-color: rgb(228, 92, 92);
+                }
+            }
+        }
+        .actions-bottom {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+    }
+}

@@ -1,0 +1,33 @@
+.info-cliente {
+  display: grid;
+  gap: 10px;
+  grid-template-rows: max-content auto;
+  height: min-content;
+  .title {
+    padding: 0 5px;
+  }
+  .body {
+    border-radius: 20px;
+    border: solid 2px silver;
+    width: max-content;
+    min-width: 300px;
+    padding: 20px 0;
+    padding-top: 10px;
+
+    .input-info {
+      padding: 0 20px;
+    }
+
+    .input-info-required {
+      position: relative;
+      width: calc(100% - 45px);
+      padding: 0 10px 0 20px;
+    }
+
+    hr {
+      border: none;
+      height: 2px;
+      background-color: silver;
+    }
+  }
+}

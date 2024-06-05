@@ -1,0 +1,41 @@
+.btn-logout {
+    width: 50px;
+    color: #fff;
+    background: transparent;
+    outline: none;
+    font-size: 20px;
+    // padding: 23px;
+    border: none;
+    position: relative;
+    img {
+        width: 100%;
+        object-fit: cover;
+        transition:
+            filter 0.3s,
+            transform 0.3s;
+    }
+}
+
+// @media only screen and (max-width: 1600px) {
+//     .btn-logout {
+//         // padding: 20px 30px;
+//         font-size: 20px;
+//     }
+// }
+
+// @media only screen and (max-width: 1400px) {
+//     .btn-logout {
+//         // padding: 22px 30px;
+//         font-size: 15px;
+//     }
+// }
+
+// @media only screen and (max-width: 900px) {
+//     .btn-logout {
+//         width: 100%;
+//         text-align: left;
+//         margin: 0 5px;
+//         font-size: 15px;
+//         // padding: 18.2px 30px;
+//     }
+// }
