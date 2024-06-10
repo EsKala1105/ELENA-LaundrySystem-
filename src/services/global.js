@@ -8,7 +8,7 @@ export const tipoMoneda = "PEN";
 export const confMoneda = "es-PE";
 export const simboloMoneda = "S/";
 export const nameMoneda = "Soles";
-export const ingresoDigital = "YAPE";
+export const ingresoDigital = "YAPE o PLIN";
 
 export const politicaAbandono = {
   mResaltado: "El plazo máximo para retirar las prendas es de 30 días ",

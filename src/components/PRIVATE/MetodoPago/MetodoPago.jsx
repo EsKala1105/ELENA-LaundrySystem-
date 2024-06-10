@@ -110,10 +110,7 @@ const MetodoPago = ({
               <span className="checkbox-icon">
                 {/* <Moto className="custom-icon" /> */}
               </span>
-              <span className="checkbox-label">
-                {ingresoDigital.charAt(0) +
-                  ingresoDigital.slice(1).toLowerCase()}
-              </span>
+              <span className="checkbox-label">{ingresoDigital}</span>
             </span>
           </label>
         </div>

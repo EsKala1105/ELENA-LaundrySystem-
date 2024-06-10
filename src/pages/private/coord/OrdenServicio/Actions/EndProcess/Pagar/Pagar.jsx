@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import React from 'react';
-import { ingresoDigital } from '../../../../../../../services/global';
-import { NumberInput } from '@mantine/core';
+import React from "react";
+import { ingresoDigital } from "../../../../../../../services/global";
+import { NumberInput } from "@mantine/core";
 
 const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
   return (
@@ -17,11 +17,13 @@ const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
               name="metodoPago"
               value="Efectivo"
               onChange={(e) => {
-                setFieldValue('metodoPago', e.target.value);
+                setFieldValue("metodoPago", e.target.value);
               }}
             />
             <span className="checkbox-tile">
-              <span className="checkbox-icon">{/* <Taxi className="custom-icon" /> */}</span>
+              <span className="checkbox-icon">
+                {/* <Taxi className="custom-icon" /> */}
+              </span>
               <span className="checkbox-label">Efectivo</span>
             </span>
           </label>
@@ -34,12 +36,14 @@ const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
               name="metodoPago"
               value={ingresoDigital}
               onChange={(e) => {
-                setFieldValue('metodoPago', e.target.value);
+                setFieldValue("metodoPago", e.target.value);
               }}
             />
             <span className="checkbox-tile">
-              <span className="checkbox-icon">{/* <Moto className="custom-icon" /> */}</span>
-              <span className="checkbox-label">{ingresoDigital.charAt(0) + ingresoDigital.slice(1).toLowerCase()}</span>
+              <span className="checkbox-icon">
+                {/* <Moto className="custom-icon" /> */}
+              </span>
+              <span className="checkbox-label">{ingresoDigital}</span>
             </span>
           </label>
         </div>
@@ -51,11 +55,13 @@ const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
               name="metodoPago"
               value="Tarjeta"
               onChange={(e) => {
-                setFieldValue('metodoPago', e.target.value);
+                setFieldValue("metodoPago", e.target.value);
               }}
             />
             <span className="checkbox-tile">
-              <span className="checkbox-icon">{/* <Moto className="custom-icon" /> */}</span>
+              <span className="checkbox-icon">
+                {/* <Moto className="custom-icon" /> */}
+              </span>
               <span className="checkbox-label">Tarjeta</span>
             </span>
           </label>
@@ -63,7 +69,7 @@ const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
         {errors.metodoPago && touched.metodoPago && (
           <div className="ico-req">
             <i className="fa-solid fa-circle-exclamation ">
-              <div className="info-req" style={{ pointerEvents: 'none' }}>
+              <div className="info-req" style={{ pointerEvents: "none" }}>
                 <span>{errors.metodoPago}</span>
               </div>
             </i>
@@ -78,7 +84,7 @@ const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
             label={`Monto de Pago : Max(${totalToPay})`}
             placeholder="Ingrese Monto"
             precision={2}
-            onChange={(value) => setFieldValue('total', value)}
+            onChange={(value) => setFieldValue("total", value)}
             min={0}
             step={1}
             max={+totalToPay}
@@ -88,7 +94,7 @@ const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
           {errors.total && touched.total && (
             <div className="ico-req">
               <i className="fa-solid fa-circle-exclamation ">
-                <div className="info-req" style={{ pointerEvents: 'none' }}>
+                <div className="info-req" style={{ pointerEvents: "none" }}>
                   <span>{errors.total}</span>
                 </div>
               </i>
