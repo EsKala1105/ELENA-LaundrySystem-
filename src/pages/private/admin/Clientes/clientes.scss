@@ -1,0 +1,133 @@
+.content-clientes {
+  display: grid;
+  margin: auto;
+  max-width: 1000px;
+  width: 100%;
+  padding: 0 20px;
+  place-items: center;
+  gap: 20px;
+  .header-cli {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+  .body-clientes {
+    width: 100%;
+    display: flex;
+    gap: 25px;
+    place-content: center;
+    justify-content: space-between;
+    .list-clientes {
+      width: max-content;
+    }
+    .detail-cliente {
+      display: grid;
+      grid-template-rows: 35px max-content;
+      gap: 10px;
+
+      $wTabla: 300px;
+      $hTabla: 320px;
+      $hHeader: 34px;
+      .title-detail {
+        font-size: 23px;
+        font-weight: 600;
+        color: #5a5a5a;
+        margin: auto;
+      }
+      .table-wrapper {
+        width: max-content;
+        height: $hTabla;
+        overflow: scroll;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        display: grid;
+        margin: auto;
+        border: 1px solid silver;
+      }
+
+      .sticky-table {
+        border-collapse: collapse;
+        border: 1px solid silver;
+        table {
+          width: $wTabla;
+        }
+
+        table,
+        td {
+          border-collapse: collapse;
+          border: 1px solid #000;
+        }
+
+        thead {
+          display: table;
+          width: $wTabla;
+          height: $hHeader;
+          tr {
+            th {
+              background-color: #6cb199;
+              color: #fff;
+              padding: 5px;
+              text-align: center;
+              position: sticky;
+              top: 0;
+              z-index: 10;
+            }
+          }
+        }
+
+        tbody {
+          display: block; /* to enable vertical scrolling */
+          max-height: calc($hTabla - $hHeader); /* e.g. */
+          overflow-y: scroll; /* keeps the scrollbar even if it doesn't need it; display purpose */
+          scrollbar-width: none;
+          tr {
+            td {
+              padding: 5px;
+              text-align: center;
+              border-bottom: 1px solid #ddd;
+            }
+            &:last-child {
+              border-bottom: none;
+            }
+            &:hover {
+              background-color: rgb(226, 202, 105);
+            }
+          }
+        }
+
+        th,
+        td {
+          width: 33.33%; /* to enable "word-break: break-all" */
+          padding: 5px;
+          border: none;
+          word-break: break-all; /* 4. */
+        }
+
+        tr {
+          display: table; /* display purpose; th's border */
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+.form-cliente {
+  display: grid;
+  gap: 10px;
+  place-items: center;
+  width: 300px;
+  .mantine-InputWrapper-root {
+    width: 230px;
+  }
+  .info-puntaje {
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 10px;
+    background-color: #6cb199;
+    color: #fff;
+    span {
+      font-size: 18px;
+      font-weight: 600;
+    }
+  }
+}

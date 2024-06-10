@@ -405,6 +405,7 @@ const OrdenServicio = ({
       },
       Modalidad: info.Modalidad,
       Nombre: info.name,
+      idCliente: infoCliente ? infoCliente._id : "",
       Items: infoIntem,
       celular: info.phone,
       direccion: info.direccion,

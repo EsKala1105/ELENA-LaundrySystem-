@@ -58,6 +58,11 @@ export const AddOrdenServices = createAsyncThunk(
         socket.emit("client:cGasto", newGasto);
       }
 
+      if ("changeCliente" in res) {
+        const { changeCliente } = res;
+        socket.emit("client:cClientes", changeCliente);
+      }
+
       if ("newCodigo" in res) {
         const { newCodigo } = res;
         socket.emit("client:updateCodigo", newCodigo);
@@ -118,6 +123,11 @@ export const UpdateOrdenServices = createAsyncThunk(
         socket.emit("client:cGasto", newGasto);
       }
 
+      if ("changeCliente" in res) {
+        const { changeCliente } = res;
+        socket.emit("client:cClientes", changeCliente);
+      }
+
       return orderUpdated;
     } catch (error) {
       // Puedes manejar los errores aquí
@@ -139,15 +149,19 @@ export const CancelEntrega_OrdenService = createAsyncThunk(
         }/api/lava-ya/cancel-entrega/${idOrden}`
       );
 
-      const ordenUpdated = response.data;
+      const res = response.data;
+      const { orderUpdated } = res;
+
+      socket.emit("client:updateOrder", res);
 
       Notify("Éxito", "Entrega cancelada correctamente", "success");
 
-      socket.emit("client:cancel-delivery", {
-        dni: ordenUpdated.dni,
-      });
+      if ("changeCliente" in res) {
+        const { changeCliente } = res;
+        socket.emit("client:cClientes", changeCliente);
+      }
 
-      return ordenUpdated;
+      return orderUpdated;
     } catch (error) {
       console.error("Error al cancelar entrega:", error);
       Notify(

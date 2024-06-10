@@ -164,9 +164,6 @@ const HeaderUser = () => {
                   Cuadre de Caja
                 </Link>
               </li>
-              {/* <li>
-                <Link to={`./${PrivateRoutes.REGISTER_PENDIENTE}`}>Pendientes</Link>
-              </li> */}
             </>
           ) : null}
 
@@ -177,10 +174,11 @@ const HeaderUser = () => {
                 <Link to={`./${PrivateRoutes.PERSONAL}`} className="active">
                   ASISTENCIA
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link to={`./${PrivateRoutes.CLIENTES}`}>Clientes</Link>
-              </li> */}
+              </li>
+
               <li>
                 <Link to={`./${PrivateRoutes.PROMOCIONES}`}>Promociones</Link>
               </li>

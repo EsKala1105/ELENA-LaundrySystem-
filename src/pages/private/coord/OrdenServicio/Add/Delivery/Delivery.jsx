@@ -81,6 +81,7 @@ const Delivery = () => {
       },
       Modalidad: "Delivery",
       Nombre: values.name,
+      idCliente: "",
       Items: [
         {
           identificador: infoServiceDelivery._id,

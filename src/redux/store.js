@@ -15,6 +15,7 @@ import productos from "./states/productos";
 import servicios from "./states/servicios";
 import pago from "./states/pago";
 import tipoGasto from "./states/tipoGasto";
+import clientes from "./states/clientes";
 
 const store = configureStore({
   reducer: {
@@ -34,6 +35,7 @@ const store = configureStore({
     servicios: servicios,
     pago: pago,
     tipoGasto: tipoGasto,
+    clientes: clientes,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

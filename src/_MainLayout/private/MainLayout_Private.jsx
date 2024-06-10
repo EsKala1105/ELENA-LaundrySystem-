@@ -58,6 +58,8 @@ import { getListCategorias } from "../../redux/actions/aCategorias";
 import { getServicios } from "../../redux/actions/aServicios";
 import { GetTipoGastos } from "../../redux/actions/aTipoGasto";
 import { updateRegistrosNCuadrados } from "../../redux/states/cuadre";
+import { getListClientes } from "../../redux/actions/aClientes";
+import { LS_changeCliente } from "../../redux/states/clientes";
 
 const PrivateMasterLayout = (props) => {
   const [
@@ -110,6 +112,7 @@ const PrivateMasterLayout = (props) => {
           dispatch(GetListUser()),
           dispatch(getListCategorias()),
           dispatch(getServicios()),
+          dispatch(getListClientes()),
         ];
 
         const responses = await Promise.all(promises);
@@ -215,6 +218,10 @@ const PrivateMasterLayout = (props) => {
     socket.on("server:cPuntos", (data) => {
       dispatch(LS_updatePuntos(data));
     });
+    // CLIENTES
+    socket.on("server:cClientes", (data) => {
+      dispatch(LS_changeCliente(data));
+    });
     // IMPUESTOS
     socket.on("server:cImpuesto", (data) => {
       dispatch(LS_updateImpuestos(data));
@@ -298,6 +305,7 @@ const PrivateMasterLayout = (props) => {
       socket.off("server:orderUpdated");
       socket.off("server:cPago");
       socket.off("server:cGasto");
+      socket.off("server:cClientes");
 
       socket.off("server:updateListOrder");
 
