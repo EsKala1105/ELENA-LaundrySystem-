@@ -5,8 +5,6 @@ import axios from "axios";
 import Portal from "../../../../../components/PRIVATE/Portal/Portal";
 import { Fragment } from "react";
 import { formatThousandsSeparator } from "../../../../../utils/functions/formatNumber/formatNumber";
-import { ingresoDigital, simboloMoneda } from "../../../../../services/global";
-import ExcelJS from "exceljs";
 import { cLetter } from "../../../../../utils/functions";
 import moment from "moment";
 import { Button } from "@mantine/core";
@@ -14,6 +12,7 @@ import { MonthPickerInput } from "@mantine/dates";
 import LoaderSpiner from "../../../../../components/LoaderSpinner/LoaderSpiner";
 import { useSelector } from "react-redux";
 import { Roles } from "../../../../../models";
+import { simboloMoneda } from "../../../../../services/global";
 
 const CuadreCaja = () => {
   const [infoCuadres, setInfoCuadres] = useState([]);
@@ -389,7 +388,8 @@ const CuadreCaja = () => {
                     }}
                   >
                     Ingresos
-                    <br />({ingresoDigital})
+                    <br />
+                    (TRANSFERENCIA)
                   </th>
                   <th
                     style={{

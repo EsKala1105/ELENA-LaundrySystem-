@@ -28,25 +28,30 @@ const Pagar = ({ setFieldValue, errors, touched, totalToPay }) => {
             </span>
           </label>
         </div>
-        <div className="checkbox">
-          <label className="checkbox-wrapper">
-            <input
-              className="checkbox-input"
-              type="radio"
-              name="metodoPago"
-              value={ingresoDigital}
-              onChange={(e) => {
-                setFieldValue("metodoPago", e.target.value);
-              }}
-            />
-            <span className="checkbox-tile">
-              <span className="checkbox-icon">
-                {/* <Moto className="custom-icon" /> */}
-              </span>
-              <span className="checkbox-label">{ingresoDigital}</span>
-            </span>
-          </label>
-        </div>
+        {ingresoDigital.map(
+          (metodo) =>
+            metodo !== "YAPE o PLIN" && (
+              <div key={metodo} className="checkbox">
+                <label className="checkbox-wrapper">
+                  <input
+                    type="radio"
+                    className="checkbox-input"
+                    name="metodoPago"
+                    value={metodo}
+                    onChange={(e) => {
+                      setFieldValue("metodoPago", e.target.value);
+                    }}
+                  />
+                  <span className="checkbox-tile">
+                    <span className="checkbox-icon">
+                      {/* <Moto className="custom-icon" /> */}
+                    </span>
+                    <span className="checkbox-label">{metodo}</span>
+                  </span>
+                </label>
+              </div>
+            )
+        )}
         <div className="checkbox">
           <label className="checkbox-wrapper">
             <input

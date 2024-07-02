@@ -959,14 +959,14 @@ const AddOld = () => {
                       className={
                         iPago.metodoPago === "Efectivo"
                           ? "ico-efect"
-                          : iPago.metodoPago === ingresoDigital
+                          : ingresoDigital.includes(iPago?.metodoPago)
                           ? "ico-tranf"
                           : "ico-card"
                       }
                       src={
                         iPago.metodoPago === "Efectivo"
                           ? Efectivo
-                          : iPago?.metodoPago === ingresoDigital
+                          : ingresoDigital.includes(iPago?.metodoPago)
                           ? Tranferencia
                           : Tarjeta
                       }

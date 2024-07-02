@@ -5,6 +5,8 @@ import React from "react";
 import styled from "styled-components";
 import { ingresoDigital } from "../../../../../services/global";
 import { formatThousandsSeparator } from "../../../../../utils/functions";
+import { useState } from "react";
+import { useEffect } from "react";
 
 const InfoCuadreStyle = styled.div`
   display: grid;
@@ -71,10 +73,13 @@ const InfoCuadre = ({
   gastos,
   pedidosPagadosEfectivo,
   pedidosPagadosTransferencia,
+  pagosByTipoTransferencia,
   pedidosPagadosTarjeta,
   montoPrevisto,
   stateCuadre,
 }) => {
+  const [showDelete, setShowDelete] = useState("n");
+
   return (
     <InfoCuadreStyle>
       <div className="form-ic">
@@ -131,12 +136,19 @@ const InfoCuadre = ({
             </div>
           </div>
         </div>
-        <TextInput
-          label={`Pedidos Pagados (${ingresoDigital}) :`}
-          radius="md"
-          value={formatThousandsSeparator(pedidosPagadosTransferencia)}
-          readOnly
-        />
+        {ingresoDigital.map(
+          (metodo) =>
+            (metodo !== "YAPE o PLIN" ||
+              pagosByTipoTransferencia[metodo] !== "0.00") && (
+              <TextInput
+                key={metodo}
+                label={`Pedidos Pagados (${metodo}):`}
+                radius="md"
+                value={pagosByTipoTransferencia[metodo]}
+                readOnly
+              />
+            )
+        )}
         <TextInput
           label={`Pedidos Pagados (TARJETA) :`}
           radius="md"
