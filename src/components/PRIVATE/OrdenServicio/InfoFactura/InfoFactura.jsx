@@ -3,8 +3,7 @@
 import React from "react";
 import "./infoFactura.scss";
 import SwtichDimension from "../../../SwitchDimension/SwitchDimension";
-import { DateCurrent } from "../../../../utils/functions";
-const InfoFactura = ({ paso, descripcion, changeValue, values, iEdit }) => {
+const InfoFactura = ({ mode, paso, descripcion, changeValue, values }) => {
   return (
     <div className="info-descuento">
       <div className="title">
@@ -23,13 +22,7 @@ const InfoFactura = ({ paso, descripcion, changeValue, values, iEdit }) => {
             }}
             colorOn="#72c999"
             // colorOff=""
-            disabled={
-              !iEdit ||
-              iEdit.dateRecepcion.fecha === DateCurrent().format4 ||
-              iEdit?.estado === "reservado"
-                ? false
-                : true
-            }
+            disabled={mode === "UPDATE"}
           />
         </div>
       </div>

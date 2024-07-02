@@ -151,18 +151,7 @@ const Maintenance = ({ info, onClose, onAddAsistencia }) => {
               return showRadioButton ||
                 (formik.values.estado === "update" &&
                   infoDay?.tipoRegistro === "cumpleaños") ? (
-                <Radio
-                  disabled={
-                    formik.values.ingreso?.hora
-                      ? InfoUsuario.rol !== "admin"
-                        ? true
-                        : false
-                      : false
-                  }
-                  key={index}
-                  value={tp}
-                  label={tp}
-                />
+                <Radio key={index} value={tp} label={tp} />
               ) : null;
             })}
           </Group>
@@ -190,7 +179,7 @@ const Maintenance = ({ info, onClose, onAddAsistencia }) => {
             disabled={
               formik.values.tipoRegistro === "falta"
                 ? true
-                : formik.values.ingreso?.saved && InfoUsuario.rol !== "admin"
+                : formik.values.ingreso?.saved
                 ? true
                 : false
             }
@@ -201,12 +190,14 @@ const Maintenance = ({ info, onClose, onAddAsistencia }) => {
             format="h:mm a"
           />
           <div className="accion-id">
-            {InfoUsuario.rol === "admin" || !formik.values.ingreso?.saved ? (
+            {!formik.values.salida?.saved ? (
               <button
                 className="day-date"
                 disabled={formik.values.tipoRegistro === "falta"}
                 onClick={() => {
                   formik.setFieldValue("ingreso.hora", "");
+                  formik.setFieldValue("salida.hora", "");
+                  formik.setFieldValue("salida.saved", false);
                   formik.setFieldValue("ingreso.saved", false);
                 }}
                 type="button"
@@ -242,7 +233,7 @@ const Maintenance = ({ info, onClose, onAddAsistencia }) => {
               formik.values.tipoRegistro === "falta"
                 ? true
                 : formik.values.ingreso?.hora
-                ? formik.values.salida?.saved && InfoUsuario.rol !== "admin"
+                ? formik.values.salida?.saved
                   ? true
                   : false
                 : true
@@ -254,7 +245,7 @@ const Maintenance = ({ info, onClose, onAddAsistencia }) => {
             format="h:mm a"
           />
           <div className="accion-id">
-            {InfoUsuario.rol === "admin" || !formik.values.salida?.saved ? (
+            {formik.values.salida?.saved ? (
               <button
                 className="day-date"
                 disabled={

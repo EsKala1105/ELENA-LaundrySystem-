@@ -8,7 +8,7 @@ import "./promocion.scss";
 import { useSelector } from "react-redux";
 import Cupon from "../../Cupon/Cupon";
 
-const Promocion = ({ /*onRedirect,*/ onAddCupon }) => {
+const Promocion = ({ onAddCupon }) => {
   const infoPromocion = useSelector((state) => state.promocion.infoPromocion);
   const [listPromos, setListPromos] = useState([]);
   const [givenPromotions, setGivenPromotions] = useState([]);

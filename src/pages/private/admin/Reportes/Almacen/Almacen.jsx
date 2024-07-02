@@ -457,18 +457,6 @@ const Almacen = () => {
     handleGetAlmacenados();
   }, []);
 
-  // useEffect(() => {
-  //   // Add the event listener
-  //   socket.on('server:updateListOrder:child', (data) => {
-  //     setInfoAlmacenados((prevInfoAlmacenados) => [...prevInfoAlmacenados, ...handleGetFactura(data)]);
-  //   });
-
-  //   return () => {
-  //     // Remove the event listener when the component unmounts
-  //     socket.off('server:updateListOrder:child');
-  //   };
-  // }, []);
-
   useEffect(() => {
     const filterById = (array, data) =>
       array.filter((item) => data._id !== item._id);
@@ -507,8 +495,6 @@ const Almacen = () => {
       }
     };
 
-    socket.on("server:orderUpdated:child", (data) => handleUpdate(data));
-
     socket.on("server:updateListOrder:child", (data) => {
       data.forEach((orden) => {
         handleUpdate(orden);
@@ -516,7 +502,6 @@ const Almacen = () => {
     });
     return () => {
       // Remove the event listener when the component unmounts
-      socket.off("server:orderUpdated:child");
       socket.off("server:updateListOrder:child");
     };
   }, [infoAlmacenados]);

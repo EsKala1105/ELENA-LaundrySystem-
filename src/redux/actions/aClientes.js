@@ -1,6 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { Notify } from "../../utils/notify/Notify";
+import { socket } from "../../utils/socket/connect";
 
 export const addCliente = createAsyncThunk(
   "clientes/addCliente",
@@ -11,8 +12,14 @@ export const addCliente = createAsyncThunk(
         newCliente
       );
 
+      const data = response.data;
+
       Notify("Cliente Registrado Correctamente", "", "success");
-      return response.data;
+      socket.emit("client:cClientes", {
+        tipoAction: "add",
+        data,
+      });
+      return data;
     } catch (error) {
       throw new Error(`No se pudo registrar  cliente - ${error}`);
     }
@@ -42,9 +49,15 @@ export const updateCliente = createAsyncThunk(
         datosCliente
       );
 
-      Notify("Actualizado Correctamente", "", "success");
+      const data = response.data;
 
-      return response.data;
+      Notify("Actualizado Correctamente", "", "success");
+      socket.emit("client:cClientes", {
+        tipoAction: "update",
+        data,
+      });
+
+      return data;
     } catch (error) {
       throw new Error(`Error al Actualizar el cliente: - ${error}`);
     }
@@ -60,8 +73,15 @@ export const deleteCliente = createAsyncThunk(
         `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/delete-cliente/${id}`
       );
 
+      const data = response.data;
+
       Notify("Cliente Eliminado Exitosamente", "", "success");
-      return response.data;
+      socket.emit("client:cClientes", {
+        tipoAction: "delete",
+        data,
+      });
+
+      return data;
     } catch (error) {
       throw new Error(`No se pudo Eliminar cliente - ${error}`);
     }

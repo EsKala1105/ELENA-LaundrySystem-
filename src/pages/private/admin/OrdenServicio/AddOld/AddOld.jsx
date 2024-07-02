@@ -4,7 +4,7 @@
 /* eslint-disable react/prop-types */
 import { Autocomplete, NumberInput, TextInput } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -68,7 +68,9 @@ const AddOld = () => {
   // Impuesto
   const [impuesto, setImpuesto] = useState(null);
 
-  const [iPago, setIPago] = useState();
+  const [estadoPago, setEstadoPago] = useState();
+
+  const [currentPago, setCurrentPago] = useState();
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -116,20 +118,18 @@ const AddOld = () => {
 
   const formik = useFormik({
     initialValues: {
-      codigo: "",
+      dni: "",
       name: "",
-      phone: "",
+      swModalidad: "Tienda",
       direccion: "",
+      codigo: "",
+      phone: "",
       dateRecojo: "",
       datePrevista: "",
-      listPago: [],
-      pago: "Pendiente",
       items: [],
       descuento: "",
-      swModalidad: "Tienda",
-      dni: "",
+      factura: false,
       subTotal: "",
-      totalNeto: "",
       cargosExtras: {
         beneficios: {
           puntos: 0,
@@ -145,7 +145,7 @@ const AddOld = () => {
           importe: 0,
         },
       },
-      factura: false,
+      totalNeto: "",
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
@@ -241,35 +241,6 @@ const AddOld = () => {
     }
   }
 
-  const handlePago = (value) => {
-    let newListPago = [];
-    let newStatePago;
-    if (value) {
-      newListPago.push(value);
-      newStatePago = handleGetInfoPago(newListPago, formik.values.totalNeto);
-      formik.setFieldValue("listPago", [value]);
-      formik.setFieldValue("pago", newStatePago.estado);
-    } else {
-      newListPago = [value];
-      const newStatePago = handleGetInfoPago(
-        newListPago,
-        formik.values.totalNeto
-      );
-      formik.setFieldValue("pago", newStatePago.estado);
-    }
-    setIPago(value);
-  };
-
-  const handleNoPagar = () => {
-    let newListPago = [];
-    const newStatePago = handleGetInfoPago(
-      newListPago,
-      formik.values.totalNeto
-    );
-    formik.setFieldValue("pago", newStatePago.estado);
-    setIPago();
-  };
-
   const handleGetInfo = (info) => {
     const infoIntem = info.items.map((p) => ({
       identificador: p.identificador,
@@ -282,18 +253,18 @@ const AddOld = () => {
       total: p.total,
     }));
 
-    const lPago = info.listPago.map((p) => {
-      return {
-        ...p,
-        date: {
-          fecha: tFecha(formik.values.dateRecojo),
-          hora: DateCurrent().format3,
-        },
-        isCounted: false,
-        idUser: InfoUsuario._id,
-      };
-    });
-    2;
+    const infoPago = currentPago
+      ? {
+          ...currentPago,
+          date: {
+            fecha: DateCurrent().format4,
+            hora: DateCurrent().format3,
+          },
+          isCounted: false,
+          idUser: InfoUsuario._id,
+        }
+      : null;
+
     const infoOrden = {
       codRecibo: info.codigo,
       dateRecepcion: {
@@ -301,6 +272,7 @@ const AddOld = () => {
         hora: tHora(infoNegocio.funcionamiento?.horas?.inicio, 1, "despues"),
       },
       Modalidad: info.swModalidad,
+      idCliente: "",
       Nombre: info.name,
       Items: infoIntem,
       celular: info.phone,
@@ -314,7 +286,6 @@ const AddOld = () => {
         hora: "",
       },
       descuento: info.descuento,
-      estadoPrenda: "pendiente",
       estado: "registrado",
       dni: info.dni,
       factura: info.factura,
@@ -322,30 +293,24 @@ const AddOld = () => {
       cargosExtras: info.cargosExtras,
       totalNeto: info.totalNeto,
       modeRegistro: "antiguo",
-      modoDescuento: "Puntos",
-      notas: [],
+      modoDescuento: "Promocion",
       gift_promo: [],
       attendedBy: {
         name: InfoUsuario.name,
         rol: InfoUsuario.rol,
       },
-      lastEdit: [],
       typeRegistro: "normal",
     };
 
     dispatch(
       AddOrdenServices({
         infoOrden,
-        infoPago: lPago,
+        infoPago,
         rol: InfoUsuario.rol,
       })
-    ).then((res) => {
-      if (res.payload) {
-        navigate(
-          `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.LIST_ORDER_SERVICE}`
-        );
-      }
-    });
+    );
+
+    navigate(`/${PrivateRoutes.PRIVATE}/${PrivateRoutes.LIST_ORDER_SERVICE}`);
   };
 
   const handleGetClientes = async (dni) => {
@@ -420,8 +385,14 @@ const AddOld = () => {
   ]);
 
   useEffect(() => {
-    handleNoPagar();
+    setCurrentPago();
   }, [formik.values.totalNeto]);
+
+  useEffect(() => {
+    const listPago = currentPago ? [currentPago] : [];
+    const iPago = handleGetInfoPago(listPago, formik.values.totalNeto);
+    setEstadoPago(iPago);
+  }, [currentPago]);
 
   return (
     <div className="space-ra">
@@ -434,35 +405,20 @@ const AddOld = () => {
           <>
             <div className="space-paralelos">
               <div style={{ width: "300px", margin: "10px 20px" }}>
-                <Autocomplete
-                  name="dni"
-                  onChange={(dni) => {
-                    handleGetClientes(dni);
-                    formik.setFieldValue("dni", dni);
-                    setDataScore();
-                    // formik.setFieldValue('name', '');
-                    // formik.setFieldValue('phone', '');
-                    formik.setFieldValue("cargosExtras.descuentos.puntos", 0);
-                    formik.setFieldValue("cargosExtras.beneficios.puntos", 0);
-                  }}
-                  label={`${documento} :`}
-                  placeholder={`Ingrese ${documento}`}
-                  defaultValue={formik.values.dni}
-                  onItemSubmit={(selected) => {
-                    const cliente = infoClientes.find(
-                      (obj) => obj.dni === selected.value
-                    );
-                    formik.setFieldValue("name", cliente.nombre);
-                    formik.setFieldValue("phone", cliente.phone);
-
-                    setDataScore(cliente);
-                  }}
-                  data={
-                    infoClientes.length > 0
-                      ? infoClientes.map((obj) => obj.dni)
-                      : []
-                  }
-                />
+                <div className="space-info">
+                  <TextInput
+                    name="dni"
+                    label={`${documento} :`}
+                    placeholder={`Ingrese ${documento}`}
+                    radius="md"
+                    value={formik.values.dni}
+                    onChange={formik.handleChange}
+                    autoComplete="off"
+                  />
+                  {formik.errors.name &&
+                    formik.touched.name &&
+                    validIco(formik.errors.name)}
+                </div>
                 <div className="space-info">
                   <NumberInput
                     name="codigo"
@@ -612,7 +568,7 @@ const AddOld = () => {
                           cantidad: 1,
                           item: "Delivery",
                           simboloMedida: "vj",
-                          descripcion: "Recojo y Entrega",
+                          descripcion: "Transporte",
                           price: getInfoDelivery().precioVenta,
                           total: getInfoDelivery().precioVenta,
                           disable: {
@@ -950,23 +906,23 @@ const AddOld = () => {
                       type="button"
                       onClick={() => setIsPortal(!isPortal)}
                     >
-                      <ButtonSwitch pago={formik.values.pago} />
+                      <ButtonSwitch pago={estadoPago?.estado} />
                     </button>
                   </div>
-                  {iPago ? (
+                  {currentPago ? (
                     <img
                       tabIndex="-1"
                       className={
-                        iPago.metodoPago === "Efectivo"
+                        currentPago.metodoPago === "Efectivo"
                           ? "ico-efect"
-                          : ingresoDigital.includes(iPago?.metodoPago)
+                          : ingresoDigital.includes(currentPago?.metodoPago)
                           ? "ico-tranf"
                           : "ico-card"
                       }
                       src={
-                        iPago.metodoPago === "Efectivo"
+                        currentPago.metodoPago === "Efectivo"
                           ? Efectivo
-                          : ingresoDigital.includes(iPago?.metodoPago)
+                          : ingresoDigital.includes(currentPago?.metodoPago)
                           ? Tranferencia
                           : Tarjeta
                       }
@@ -974,8 +930,8 @@ const AddOld = () => {
                     />
                   ) : null}
                 </div>
-                {iPago ? (
-                  <div className="info-pago">{`${iPago.metodoPago} ${simboloMoneda}${iPago.total} : ${formik.values.pago}`}</div>
+                {currentPago ? (
+                  <div className="estado-pago">{`${currentPago.metodoPago} ${simboloMoneda}${currentPago.total} : ${estadoPago?.estado}`}</div>
                 ) : null}
               </div>
             </div>
@@ -986,12 +942,17 @@ const AddOld = () => {
                 }}
               >
                 <MetodoPago
-                  handlePago={handlePago}
-                  infoPago={iPago}
+                  // handlePago={handlePago}
+                  // infoPago={iPago}
+                  // totalToPay={formik.values.totalNeto}
+                  // handleNoPagar={handleNoPagar}
+                  // onClose={setIsPortal}
+                  // modeUse={"New"}
+                  currentPago={currentPago}
+                  onConfirm={(value) => setCurrentPago(value)}
+                  onCancel={() => setCurrentPago()}
+                  onClose={() => setIsPortal(false)}
                   totalToPay={formik.values.totalNeto}
-                  handleNoPagar={handleNoPagar}
-                  onClose={setIsPortal}
-                  modeUse={"New"}
                 />
               </Portal>
             )}

@@ -7,7 +7,7 @@ import { Modal } from "@mantine/core";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import moment from "moment";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import InfoCliente from "./InfoCliente/InfoCliente";
 import "./ordenServicio.scss";
 import InfoServicios from "./InfoServicios/InfoServicios";
@@ -19,34 +19,35 @@ import { useEffect } from "react";
 import InfoPromociones from "./InfoPromociones/InfoPromociones";
 import InfoPuntos from "./InfoPuntos/InfoPuntos";
 import InfoPago from "./InfoPago/InfoPago";
-import { showFactura, simboloMoneda } from "../../../services/global";
+import {
+  defaultHoraPrevista,
+  showFactura,
+  simboloMoneda,
+} from "../../../services/global";
 import { modals } from "@mantine/modals";
 import axios from "axios";
 import {
   DateCurrent,
+  formatFecha,
+  formatHora,
   formatRoundedNumber,
-  handleGetInfoPago,
 } from "../../../utils/functions";
-import { useNavigate } from "react-router-dom";
-import { PrivateRoutes } from "../../../models";
-import { DeletePago, UpdatePago } from "../../../redux/actions/aPago";
 import Promocion from "./Promocion/Promocion";
 import { useDisclosure } from "@mantine/hooks";
 import InfoPagos from "./InfoPagos/InfoPagos";
 import MetodoPago from "../MetodoPago/MetodoPago";
-import Portal from "../Portal/Portal";
 import SwtichDimension from "../../SwitchDimension/SwitchDimension";
 import InfoFactura from "./InfoFactura/InfoFactura";
 
-const OrdenServicio = ({
-  mode,
-  action,
-  onAction,
-  iEdit,
-  titleMode,
-  nameDefault,
-}) => {
-  const [opened, { open, close }] = useDisclosure(false);
+const OrdenServicio = ({ mode, onAction, infoDefault, titleMode }) => {
+  const [mPromocion, { open: openModalPromocion, close: closeModalPromocion }] =
+    useDisclosure(false);
+
+  const [
+    mMetodoPago,
+    { open: openModalMetodoPago, close: closeModalMetodoPago },
+  ] = useDisclosure(false);
+
   const iCodigo = useSelector((state) => state.codigo.infoCodigo.codActual);
   const { InfoImpuesto: iImpuesto, InfoPuntos: iPuntos } = useSelector(
     (state) => state.modificadores
@@ -57,22 +58,23 @@ const OrdenServicio = ({
   const iServicios = useSelector((state) => state.servicios.listServicios);
   const InfoNegocio = useSelector((state) => state.negocio.infoNegocio);
 
+  const listClientes = useSelector((state) => state.clientes.listClientes);
+
   const [sidePanelVisible, setSidePanelVisible] = useState(false);
 
   const [listCupones, setListCupones] = useState([]);
+
   const [infoCliente, setInfoCliente] = useState(null);
-  const [resValidCupon, setResValidCupon] = useState(null);
+  const [infoPagos, setInfoPagos] = useState([]);
 
-  const [iPago, setIPago] = useState();
-  const [isPromocion, setIsPromocion] = useState(false);
-  const [isPortalPago, setIsPortalPago] = useState(false);
+  const [currentPago, setCurrentPago] = useState();
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const [onDescuento, setOnDescuento] = useState(false);
+  const [onPromocion, setOnPromocion] = useState(false);
 
   const validationSchema = Yup.object().shape({
     name: Yup.string().required("Campo obligatorio"),
-    items: Yup.array()
+    Items: Yup.array()
       .min(1, "Debe haber al menos un item")
       .test(
         "categoria",
@@ -105,11 +107,16 @@ const OrdenServicio = ({
         price: item.precio,
         total: item.total, // Similar para 'total'
         disable: {
-          cantidad: true,
+          cantidad: isDelivery ? true : mode !== "UPDATE" ? false : true,
           item: true,
           descripcion: isDelivery,
-          total: iEdit?.modeEditAll ? false : true,
-          action: true,
+          total:
+            mode !== "UPDATE"
+              ? false
+              : isDelivery && mode !== "UPDATE"
+              ? false
+              : true,
+          action: isDelivery ? true : mode !== "UPDATE" ? false : true,
         },
       };
     });
@@ -117,103 +124,61 @@ const OrdenServicio = ({
 
   const formik = useFormik({
     initialValues: {
-      dni: iEdit ? iEdit.dni : "",
-      name: iEdit
-        ? iEdit.Nombre
-        : mode === "Delivery" && nameDefault
-        ? nameDefault
-        : "",
-      Modalidad: iEdit ? iEdit.Modalidad : mode,
-      direccion: iEdit ? iEdit.direccion : "",
-      phone: iEdit ? iEdit.celular : "",
-      dateRecojo: iEdit?.dateRecepcion?.fecha
-        ? moment(
-            `${iEdit.dateRecepcion.fecha} ${iEdit.dateRecepcion.hora}`,
-            "YYYY-MM-DD HH:mm"
-          ).toDate()
-        : new Date(),
-      datePrevista: iEdit?.datePrevista?.fecha
-        ? moment(iEdit.datePrevista.fecha, "YYYY-MM-DD").toDate()
-        : new Date(),
-      dayhour: iEdit?.datePrevista?.hora || "17:00",
-      listPago: iEdit ? iEdit.ListPago : [],
-      pago: iEdit
-        ? handleGetInfoPago(iEdit.ListPago, iEdit.totalNeto).estado
-        : "Pendiente",
-      items: iEdit
-        ? getItemsAdaptados(iEdit.Items)
-        : mode === "Delivery"
-        ? [
-            {
-              identificador: iDelivery?._id,
-              tipo: "servicio",
-              cantidad: 1,
-              item: "Delivery",
-              simboloMedida: "vj",
-              descripcion: "Transporte",
-              price: iDelivery?.precioVenta,
-              total: iDelivery?.precioVenta,
-              disable: {
-                cantidad: true,
-                item: true,
-                descripcion: true,
-                total: false,
-                action: true,
-              },
-            },
-          ]
-        : [],
-      descuento: iEdit ? iEdit.descuento : 0,
-      modoDescuento: iEdit ? iEdit.modoDescuento : "Puntos",
-      factura: iEdit ? iEdit.factura : false,
-      subTotal: iEdit ? iEdit.subTotal : 0,
-      cargosExtras: iEdit
-        ? iEdit.cargosExtras
-        : {
-            beneficios: {
-              puntos: 0,
-              promociones: [],
-            },
-            descuentos: {
-              puntos: 0,
-              promocion: 0,
-            },
-            igv: {
-              valor: iImpuesto.IGV,
-              importe: 0,
-            },
-          },
-      totalNeto: iEdit ? iEdit.totalNeto : 0,
-      gift_promo: iEdit ? iEdit.gift_promo : [],
-      onDescuento: false,
+      dni: "",
+      name: "",
+      Modalidad: "Tienda",
+      direccion: "",
+      celular: "",
+      dateRecojo: new Date(),
+      datePrevista: new Date(),
+      dayhour: defaultHoraPrevista,
+      Items: [],
+      descuento: 0,
+      modoDescuento: "Promocion",
+      factura: false,
+      subTotal: 0,
+      cargosExtras: {
+        beneficios: {
+          puntos: 0,
+          promociones: [],
+        },
+        descuentos: {
+          puntos: 0,
+          promocion: 0,
+        },
+        igv: {
+          valor: iImpuesto.IGV,
+          importe: 0,
+        },
+      },
+      totalNeto: 0,
+      gift_promo: [],
     },
     validationSchema: validationSchema,
     onSubmit: async (values) => {
       let correcciones = [];
-      if (
-        iEdit?.estado !== "registrado" &&
-        values.modoDescuento === "Promocion"
-      ) {
-        correcciones = await validItems(
-          values.cargosExtras.beneficios.promociones
-        );
+      const promociones = values.cargosExtras.beneficios.promociones;
+      const existPromocion = promociones.length > 0 ? true : false;
+
+      if (values.modoDescuento === "Promocion" && existPromocion) {
+        correcciones = await validItems(promociones);
       }
       if (correcciones.length > 0) {
         alert(`La Promoción Exige:\n\n${correcciones.join("\n")}`);
       } else {
-        if (iEdit?.estado === "registrado") {
-          openModal([]);
-        } else {
+        if (mode === "NEW") {
           const thereIsPromo = iPromocion.length > 0;
           const thereIsPromoActiva = iPromocion.some(
             (promocion) => promocion.state === "activo"
           );
 
           if (thereIsPromo && thereIsPromoActiva) {
-            open();
+            openModalPromocion();
           } else {
             openModal([]);
           }
+        } else {
+          openModal([]);
         }
       }
     },
@@ -227,7 +192,6 @@ const OrdenServicio = ({
         }/api/lava-ya/validar-cupon/${codigoCupon}`
       );
       const data = response.data;
-      await setResValidCupon(data);
       return data;
     } catch (error) {
       // Captura errores y devuelve un mensaje de error genérico
@@ -238,7 +202,7 @@ const OrdenServicio = ({
   };
 
   const validItems = async (promociones) => {
-    const listItems = formik.values.items;
+    const listItems = formik.values.Items;
     const ListCorrecciones = [];
 
     // si la promo es la misma reducirla a 1 sola
@@ -252,9 +216,19 @@ const OrdenServicio = ({
     }, []);
 
     for (const p of listP) {
-      const infoCupon = await validCupon(p.codigoCupon);
+      let infoCupon;
 
-      const idServicios = infoCupon.promocion.prenda;
+      infoCupon = {
+        alcance: p.alcance,
+        cantidadMin: p.cantidadMin || 0,
+        codigo: p.codigoPromocion,
+        descripcion: p.descripcion,
+        descuento: p.descuento,
+        prenda: p.prenda,
+        tipoDescuento: p.tipoDescuento,
+        tipoPromocion: p.tipoPromocion,
+      };
+      const idServicios = infoCupon.prenda;
 
       let servicios = [];
 
@@ -280,16 +254,16 @@ const OrdenServicio = ({
         identificadoresReferencia.includes(item.identificador)
       );
 
-      const cantMin = infoCupon.promocion.cantidadMin;
+      const cantMin = infoCupon.cantidadMin;
 
       const handleGetCaActual = (atributo) =>
         itemsValidos.reduce((total, item) => total + +item[atributo], 0);
 
       let infoFaltante = "";
       let cantActual = 0;
-      if (infoCupon.promocion.tipoPromocion === "Varios") {
+      if (infoCupon.tipoPromocion === "Varios") {
         // Varios
-        if (infoCupon.promocion.tipoDescuento === "Porcentaje") {
+        if (infoCupon.tipoDescuento === "Porcentaje") {
           // Pocentaje
           cantActual = handleGetCaActual("cantidad");
         } else {
@@ -303,7 +277,7 @@ const OrdenServicio = ({
 
       const res = cantActual >= cantMin;
 
-      if (infoCupon.promocion.tipoPromocion === "Unico") {
+      if (infoCupon.tipoPromocion === "Unico") {
         if (!res) {
           infoFaltante = `${`Minimo ${cantMin}${
             servicios[0].simbolo
@@ -315,7 +289,7 @@ const OrdenServicio = ({
         }
       } else {
         if (!res) {
-          if (infoCupon.promocion.tipoDescuento === "Monto") {
+          if (infoCupon.tipoDescuento === "Monto") {
             infoFaltante = `${`Minimo ${simboloMoneda}${cantMin} en gastos de servicio y ${
               cantActual === 0
                 ? "no registraste ninguno"
@@ -335,8 +309,8 @@ const OrdenServicio = ({
 
   const openModal = async (cups) => {
     let confirmationEnabled = true;
-    close();
-    setIsPromocion(false);
+    closeModalPromocion();
+    setOnPromocion(false);
     const values = {
       ...formik.values,
       gift_promo: cups.length > 0 ? cups : [],
@@ -362,18 +336,8 @@ const OrdenServicio = ({
     });
   };
 
-  function tFecha(fecha) {
-    const fechaFormateada = moment(fecha).format("YYYY-MM-DD");
-    return fechaFormateada;
-  }
-
-  function tHora(fecha) {
-    const horaFormateada = moment(fecha).format("HH:mm");
-    return horaFormateada;
-  }
-
   const handleGetInfo = async (info) => {
-    const infoIntem = info.items.map((p) => ({
+    const infoIntem = info.Items.map((p) => ({
       identificador: p.identificador,
       tipo: p.tipo,
       cantidad: p.cantidad,
@@ -384,33 +348,41 @@ const OrdenServicio = ({
       total: p.total,
     }));
 
-    let finalUpdatePromo = info.cargosExtras;
-    if (info.modoDescuento === "Promocion" && !iEdit) {
+    const infoPago = currentPago
+      ? {
+          ...currentPago,
+          date: {
+            fecha: DateCurrent().format4,
+            hora: DateCurrent().format3,
+          },
+          isCounted: true,
+          idUser: iUsuario._id,
+        }
+      : null;
+
+    let finalUpdatePromo = JSON.parse(JSON.stringify(info.cargosExtras));
+    if (info.modoDescuento === "Promocion" && mode !== "UPDATE") {
       finalUpdatePromo.beneficios.promociones = listCupones;
       finalUpdatePromo.beneficios.puntos = 0;
       finalUpdatePromo.descuentos.puntos = 0;
-    } else if (info.modoDescuento === "Puntos" && !iEdit) {
+    } else if (info.modoDescuento === "Puntos" && mode !== "UPDATE") {
       finalUpdatePromo.beneficios.promociones = [];
       finalUpdatePromo.descuentos.promocion = 0;
     }
-    !iEdit ||
-      iEdit.dateRecepcion.fecha === DateCurrent().format4 ||
-      iEdit?.estado === "reservado";
 
     const infoOrden = {
-      codRecibo: iEdit ? iEdit.codRecibo : iCodigo,
       dateRecepcion: {
-        fecha: tFecha(info.dateRecojo),
-        hora: tHora(info.dateRecojo),
+        fecha: formatFecha(info.dateRecojo),
+        hora: formatHora(info.dateRecojo),
       },
       Modalidad: info.Modalidad,
       Nombre: info.name,
       idCliente: infoCliente ? infoCliente._id : "",
       Items: infoIntem,
-      celular: info.phone,
+      celular: info.celular,
       direccion: info.direccion,
       datePrevista: {
-        fecha: tFecha(info.datePrevista),
+        fecha: formatFecha(info.datePrevista),
         hora: info.dayhour,
       },
       dateEntrega: {
@@ -418,131 +390,27 @@ const OrdenServicio = ({
         hora: "",
       },
       descuento: info.descuento,
-      estadoPrenda: iEdit ? iEdit.estadoPrenda : "pendiente",
-      estado: "registrado",
       dni: info.dni,
       factura: info.factura,
       subTotal: info.subTotal,
       cargosExtras: finalUpdatePromo,
       totalNeto: info.totalNeto,
       modeRegistro: "nuevo",
-      notas: iEdit ? iEdit.notas : [],
       modoDescuento: info.modoDescuento,
-      gift_promo: iEdit
-        ? iEdit.estado === "reservado"
-          ? info.gift_promo
-          : iEdit.gift_promo
-        : info.gift_promo,
-      attendedBy: iEdit
-        ? iEdit.attendedBy
-        : {
-            name: iUsuario.name,
-            rol: iUsuario.rol,
-          },
-      lastEdit: iEdit
-        ? [
-            ...iEdit.lastEdit,
-            {
-              name: iUsuario.name,
-              date: moment().format("YYYY-MM-DD HH:mm:ss.SSS"),
-            },
-          ]
-        : [],
-      typeRegistro: "normal",
+      gift_promo: info.gift_promo,
+      attendedBy: {
+        name: iUsuario.name,
+        rol: iUsuario.rol,
+      },
     };
 
     onAction({
       infoOrden,
-      infoPago: info.listPago,
+      infoPago,
       rol: iUsuario.rol,
     });
 
     formik.handleReset();
-    handleNoPagar();
-  };
-
-  const handleNoPagar = (id) => {
-    if (iEdit && iEdit.modeEditAll === false && id) {
-      let confirmationEnabled = true;
-      modals.openConfirmModal({
-        title: "Elimiancion de Pago",
-        centered: true,
-        children: <Text size="sm">¿Estás seguro de Eliminar este Pago?</Text>,
-        labels: { confirm: "Si", cancel: "No" },
-        confirmProps: { color: "red" },
-        onCancel: () => console.log("eliminacion de pago cancelado"),
-        onConfirm: () => {
-          if (confirmationEnabled) {
-            confirmationEnabled = false;
-            dispatch(DeletePago(id));
-
-            navigate(
-              `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.LIST_ORDER_SERVICE}`
-            );
-          }
-        },
-      });
-    } else {
-      if (
-        action === "Guardar" ||
-        (action === "Editar" && iEdit?.modeEditAll === true)
-      ) {
-        formik.setFieldValue("listPago", []);
-        formik.setFieldValue("pago", "Pendiente");
-      }
-    }
-    setIPago();
-  };
-
-  const handlePago = (value) => {
-    setIPago(value);
-    let newListPago = [];
-    let newStatePago;
-    if (value) {
-      const iPago = {
-        ...value,
-        isCounted: true,
-        idUser: iUsuario._id,
-        date: {
-          fecha: moment().format("YYYY-MM-DD"),
-          hora: moment().format("HH:mm"),
-        },
-      };
-
-      if (iEdit && iEdit.modeEditAll === false && iPago._id) {
-        let confirmationEnabled = true;
-        if (confirmationEnabled) {
-          confirmationEnabled = false;
-          dispatch(
-            UpdatePago({
-              idPago: iPago._id,
-              pagoUpdated: value.isCounted === false ? value : iPago,
-            })
-          );
-        }
-        navigate(
-          `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.LIST_ORDER_SERVICE}`
-        );
-      } else {
-        if (
-          action === "Guardar" ||
-          (action === "Editar" && iEdit?.modeEditAll === true)
-        ) {
-          newListPago = [iPago];
-        } else {
-          newListPago = [...formik.values.listPago, iPago];
-        }
-      }
-    } else {
-      newListPago = [value];
-      iEdit
-        ? formik.values.listPago.filter((pago) => pago._id === value._id)
-        : null;
-    }
-
-    formik.setFieldValue("listPago", newListPago);
-    newStatePago = handleGetInfoPago(newListPago, formik.values.totalNeto);
-    formik.setFieldValue("pago", newStatePago.estado);
   };
 
   const handleChageValue = (name, value) => {
@@ -581,9 +449,9 @@ const OrdenServicio = ({
           let itemsConsideradas;
           if (dsc.tipoPromocion === "Varios") {
             if (dsc.alcance === "Todos") {
-              itemsConsideradas = formik.values.items;
+              itemsConsideradas = formik.values.Items;
             } else {
-              itemsConsideradas = formik.values.items.filter((elemento) =>
+              itemsConsideradas = formik.values.Items.filter((elemento) =>
                 dsc.prenda.includes(elemento.identificador)
               );
             }
@@ -602,7 +470,7 @@ const OrdenServicio = ({
             sumaTotales -= dscFinal;
           } else {
             const prenda = grupo[0].prenda[0];
-            itemsConsideradas = formik.values.items.filter(
+            itemsConsideradas = formik.values.Items.filter(
               (i) => i.identificador === prenda
             );
             if (itemsConsideradas.length > 0) {
@@ -652,21 +520,19 @@ const OrdenServicio = ({
   };
 
   useEffect(() => {
-    if (!iEdit || iEdit?.estado === "reservado") {
-      recalculatePromoDescuento();
-    }
-  }, [formik.values.items, listCupones.length, formik.values.modoDescuento]);
+    recalculatePromoDescuento();
+  }, [formik.values.Items, listCupones.length, formik.values.modoDescuento]);
 
   useEffect(() => {
-    if (formik.values.onDescuento === true) {
-      if (formik.values.modoDescuento === "Promocion") {
+    if (onDescuento === true) {
+      if (formik.values.modoDescuento === "Promocion" && mode !== "UPDATE") {
         if (listCupones.length > 0) {
           setSidePanelVisible(true);
         } else {
           setSidePanelVisible(false);
         }
       }
-      if (formik.values.modoDescuento === "Puntos") {
+      if (formik.values.modoDescuento === "Puntos" && mode !== "UPDATE") {
         if (infoCliente) {
           setSidePanelVisible(true);
         } else {
@@ -676,11 +542,7 @@ const OrdenServicio = ({
     } else {
       setSidePanelVisible(false);
     }
-  }, [
-    formik.values.onDescuento,
-    formik.values.modoDescuento,
-    listCupones.length,
-  ]);
+  }, [onDescuento, formik.values.modoDescuento, listCupones.length]);
 
   useEffect(() => {
     const subTotal = formik.values.subTotal;
@@ -700,7 +562,7 @@ const OrdenServicio = ({
     formik.setFieldValue("totalNeto", +formatRoundedNumber(totalNeto));
   }, [
     formik.values.cargosExtras.igv,
-    formik.values.items,
+    formik.values.Items,
     formik.values.modoDescuento,
     formik.values.cargosExtras.descuentos,
     formik.values.cargosExtras.descuento,
@@ -709,8 +571,55 @@ const OrdenServicio = ({
   ]);
 
   useEffect(() => {
-    handleNoPagar();
+    setCurrentPago();
   }, [formik.values.totalNeto]);
+
+  useEffect(() => {
+    if (infoDefault) {
+      handleChageValue("dni", infoDefault.dni);
+      handleChageValue("name", infoDefault.Nombre);
+      handleChageValue("Modalidad", infoDefault.Modalidad);
+      handleChageValue("direccion", infoDefault.direccion);
+      handleChageValue("celular", infoDefault.celular);
+      handleChageValue(
+        "dateRecojo",
+        moment(infoDefault.dateRecepcion.fecha, "YYYY-MM-DD").toDate()
+      );
+      handleChageValue(
+        "datePrevista",
+        moment(infoDefault.datePrevista.fecha, "YYYY-MM-DD").toDate()
+      );
+      handleChageValue("dayhour", infoDefault.datePrevista.hora);
+      handleChageValue("Items", getItemsAdaptados(infoDefault.Items));
+      handleChageValue("factura", infoDefault.factura);
+      handleChageValue("subTotal", infoDefault.subTotal);
+      handleChageValue("totalNeto", infoDefault.totalNeto);
+      handleChageValue("gift_promo", infoDefault.gift_promo);
+      handleChageValue("modoDescuento", infoDefault.modoDescuento);
+      handleChageValue("descuento", infoDefault.descuento);
+      handleChageValue("cargosExtras", infoDefault.cargosExtras);
+
+      setInfoPagos(infoDefault.ListPago);
+      const dCliente = listClientes.find(
+        (cli) => cli._id === infoDefault.idCliente
+      );
+
+      if (infoDefault.descuento > 0) {
+        setOnDescuento(true);
+      }
+      if (infoDefault.modoDescuento === "Promocion") {
+        setListCupones(infoDefault.cargosExtras.beneficios.promociones);
+        setInfoCliente(dCliente);
+      }
+      if (infoDefault.modoDescuento === "Puntos") {
+        setInfoCliente({
+          ...dCliente,
+          scoreTotal:
+            dCliente.scoreTotal + infoDefault.cargosExtras.beneficios.puntos,
+        });
+      }
+    }
+  }, [infoDefault]);
 
   return (
     <form onSubmit={formik.handleSubmit} className="content-recibo">
@@ -721,12 +630,11 @@ const OrdenServicio = ({
           }`}
         >
           <div className="title-recibo">
-            <h1>{titleMode}&nbsp;</h1>
             <h1>
-              ORDEN DE SERVICIO&nbsp;
-              {iEdit?.modeRegistro === "antiguo" ? "(ANTIGUA)" : null}&nbsp;
+              {titleMode}&nbsp;-&nbsp;ORDEN SERVICIO N°&nbsp;
+              {infoDefault ? `${infoDefault.codRecibo} ` : iCodigo}
             </h1>
-            <h1>{iEdit ? `N° ${iEdit.codRecibo} ` : iCodigo}</h1>
+            <span></span>
           </div>
           <Button className="btn-saved" type="submit">
             {titleMode}
@@ -744,7 +652,7 @@ const OrdenServicio = ({
               handleChange={(value) => {
                 formik.setFieldValue("Modalidad", value);
                 if (value === "Delivery") {
-                  formik.setFieldValue("items", [
+                  formik.setFieldValue("Items", [
                     {
                       identificador: iDelivery._id,
                       tipo: "servicio",
@@ -762,18 +670,18 @@ const OrdenServicio = ({
                         action: true,
                       },
                     },
-                    ...formik.values.items,
+                    ...formik.values.Items,
                   ]);
                 } else {
-                  const updatedItems = formik.values.items.filter(
+                  const updatedItems = formik.values.Items.filter(
                     (item) => item.identificador !== iDelivery._id
                   );
-                  formik.setFieldValue("items", updatedItems);
+                  formik.setFieldValue("Items", updatedItems);
                 }
               }}
               colorOn="#75cbaf"
               // colorOff=""
-              disabled={iEdit ? (iEdit.modeEditAll ? false : true) : false}
+              disabled={mode === "UPDATE" ? true : false}
             />
           </div>
         ) : null}
@@ -781,94 +689,94 @@ const OrdenServicio = ({
       <div className="container">
         <div className="principal-data">
           <InfoCliente
-            changeValue={handleChageValue}
-            values={formik.values}
-            iEdit={iEdit}
-            error={formik.errors}
-            touched={formik.touched}
             iCliente={infoCliente}
             changeICliente={setInfoCliente}
+            // ------------------------------------- //
+            mode={mode}
+            changeValue={handleChageValue}
+            values={formik.values}
+            // ------------------------------------- //
             paso="1"
             descripcion="Información del Cliente"
-          />
-          <InfoServicios
-            changeValue={handleChageValue}
-            onReturn
-            values={formik.values}
-            iCliente={infoCliente}
-            paso="2"
-            descripcion="¿Qué trajo el cliente?"
-            iEdit={iEdit}
-            iDelivery={iDelivery}
-            iPuntos={iPuntos}
             error={formik.errors}
             touched={formik.touched}
+          />
+          <InfoServicios
+            iCliente={infoCliente}
+            iDelivery={iDelivery}
+            iPuntos={iPuntos}
             iServicios={iServicios}
+            onDescuento={onDescuento}
+            // ------------------------------------- //
+            mode={mode}
+            changeValue={handleChageValue}
+            values={formik.values}
+            // ------------------------------------- //
+            paso="2"
+            descripcion="¿Qué trajo el cliente?"
+            error={formik.errors}
+            touched={formik.touched}
           />
         </div>
         <div className="other-info">
           <InfoEntrega
+            mode={mode}
             changeValue={handleChageValue}
             values={formik.values}
             paso="3"
             descripcion="¿Para cuando estara Listo?"
-            iEdit={iEdit}
           />
           {showFactura ? (
             <InfoFactura
-              paso={showFactura ? "4" : "5"}
-              descripcion="Agregar Factura"
+              mode={mode}
               changeValue={handleChageValue}
               values={formik.values}
-              iPuntos={iPuntos}
-              iEdit={iEdit}
+              paso={showFactura ? "4" : "5"}
+              descripcion="Agregar Factura"
             />
           ) : null}
-          {(iEdit && iEdit.modeEditAll) || !iEdit ? (
+          {mode !== "UPDATE" ? (
             <>
               <InfoDescuento
-                changeValue={handleChageValue}
                 setListCupones={(value) => {
                   setListCupones(value);
                 }}
                 iCliente={infoCliente}
                 listCupones={listCupones}
-                setResValidCupon={setResValidCupon}
-                resValidCupon={resValidCupon}
+                onDescuento={onDescuento}
+                setOnDescuento={setOnDescuento}
+                validCupon={validCupon}
+                // ------------------------------------- //
+                changeValue={handleChageValue}
                 values={formik.values}
+                // ------------------------------------- //
                 paso="4"
                 descripcion="¿Deseas Agregar Descuento?"
               />
               <InfoPago
-                changeValue={handleChageValue}
+                currentPago={currentPago}
+                openModalMetodoPago={openModalMetodoPago}
+                // ------------------------------------- //
                 values={formik.values}
+                // ------------------------------------- //
                 paso="5"
                 descripcion="Agregar Pago"
-                handleNoPagar={handleNoPagar}
-                handlePago={handlePago}
-                iEdit={iEdit}
-                isPortalPago={isPortalPago}
-                setIsPortalPago={setIsPortalPago}
-                iPago={iPago}
               />
             </>
           ) : (
             <InfoPagos
-              changeValue={handleChageValue}
-              descripcion="Lista de Pagos"
-              handleNoPagar={handleNoPagar}
-              setIPago={setIPago}
-              setIsPortalPago={setIsPortalPago}
-              listPago={formik.values.listPago}
+              values={formik.values}
+              infoPagos={infoPagos}
               iUsuario={iUsuario}
+              descripcion="Lista de Pagos"
             />
           )}
         </div>
-        <div className="info-pago"></div>
       </div>
-      {(formik.values.modoDescuento === "Promocion" &&
+      {((formik.values.modoDescuento === "Promocion" &&
         listCupones.length > 0) ||
-      (formik.values.modoDescuento === "Puntos" && infoCliente) ? (
+        (formik.values.modoDescuento === "Puntos" && infoCliente)) &&
+      mode !== "UPDATE" ? (
         <div
           className={`side-info-extra ${
             sidePanelVisible ? "show-panel" : "hide-panel"
@@ -900,10 +808,10 @@ const OrdenServicio = ({
         </div>
       ) : null}
       <Modal
-        opened={opened}
+        opened={mPromocion}
         onClose={() => {
-          close();
-          setIsPromocion(false);
+          closeModalPromocion();
+          setOnPromocion(false);
           formik.setFieldValue("gift_promo", []);
         }}
         size={650}
@@ -911,7 +819,7 @@ const OrdenServicio = ({
         title="¿ Deseas entregar uno o mas cupones de Promocion ?"
         centered
       >
-        {isPromocion === true ? (
+        {onPromocion === true ? (
           <Promocion onAddCupon={openModal} />
         ) : (
           <div className="opcion">
@@ -919,7 +827,7 @@ const OrdenServicio = ({
               className="btn-action acp"
               type="button"
               onClick={() => {
-                setIsPromocion(true);
+                setOnPromocion(true);
               }}
             >
               Si
@@ -934,31 +842,31 @@ const OrdenServicio = ({
           </div>
         )}
       </Modal>
-      {isPortalPago === true && (
-        <Portal
-          onClose={() => {
-            setIsPortalPago(false);
-          }}
-        >
-          <MetodoPago
-            handlePago={handlePago}
-            infoPago={iPago}
-            totalToPay={
-              iEdit && iEdit.modeEditAll === false
-                ? parseFloat(formik.values.totalNeto) -
-                  (formik.values.listPago?.reduce(
-                    (total, pago) => total + parseFloat(pago.total),
-                    0
-                  ) -
-                    (iPago ? parseFloat(iPago?.total) : 0))
-                : formik.values.totalNeto
-            }
-            handleNoPagar={handleNoPagar}
-            onClose={setIsPortalPago}
-            modeUse={iEdit ? (iEdit.modeEditAll ? "Reserved" : "Edit") : "New"}
-          />
-        </Portal>
-      )}
+      <Modal
+        opened={mMetodoPago}
+        onClose={() => {
+          closeModalMetodoPago();
+        }}
+        size="auto"
+        scrollAreaComponent={ScrollArea.Autosize}
+        // title=""
+        centered
+      >
+        <MetodoPago
+          currentPago={currentPago}
+          onConfirm={(value) => setCurrentPago(value)}
+          onCancel={() => setCurrentPago()}
+          onClose={closeModalMetodoPago}
+          totalToPay={
+            parseFloat(formik.values.totalNeto) -
+            (infoPagos.reduce(
+              (total, pago) => total + parseFloat(pago.total),
+              0
+            ) -
+              (currentPago ? parseFloat(currentPago.total) : 0))
+          }
+        />
+      </Modal>
     </form>
   );
 };

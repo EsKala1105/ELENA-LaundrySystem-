@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 import { NumberInput, TextInput } from "@mantine/core";
 
@@ -9,185 +9,87 @@ import { Field, Form, Formik } from "formik";
 import * as Yup from "yup";
 
 // import Factura from "../../../../../Data/ReusableComponent/Factura/Factura";
-import OrdenServicio from "../../../../../../components/PRIVATE/OrdenServicio/OrdenServicio";
-import LoaderSpiner from "../../../../../../components/LoaderSpinner/LoaderSpiner";
-import { DateCurrent } from "../../../../../../utils/functions";
-import "./delivery.scss";
+import OrdenServicio from "../../../../../components/PRIVATE/OrdenServicio/OrdenServicio";
+import LoaderSpiner from "../../../../../components/LoaderSpinner/LoaderSpiner";
+import { DateCurrent } from "../../../../../utils/functions";
+import "./anularReplace.scss";
 
-import { ReactComponent as DeliveryPropio } from "../../../../../../utils/img/Delivery/delivery-propio.svg";
-import { ReactComponent as DeliveryPrivado } from "../../../../../../utils/img/Delivery/delivery-privado.svg";
+import { ReactComponent as DeliveryPropio } from "../../../../../utils/img/Delivery/delivery-propio.svg";
+import { ReactComponent as DeliveryPrivado } from "../../../../../utils/img/Delivery/delivery-privado.svg";
 
-import { Text } from "@mantine/core";
-import { modals } from "@mantine/modals";
 import { useDispatch, useSelector } from "react-redux";
-import { AddOrdenServices } from "../../../../../../redux/actions/aOrdenServices";
 
-import { setLastRegister } from "../../../../../../redux/states/service_order";
-import { PrivateRoutes } from "../../../../../../models";
+import { PrivateRoutes } from "../../../../../models";
 import {
   defaultHoraPrevista,
   simboloMoneda,
-} from "../../../../../../services/global";
-import ValidIco from "../../../../../../components/ValidIco/ValidIco";
+} from "../../../../../services/global";
+import ValidIco from "../../../../../components/ValidIco/ValidIco";
+import { AnularRemplazar_OrdensService } from "../../../../../redux/actions/aOrdenServices";
+import { setLastRegister } from "../../../../../redux/states/service_order";
 
-const Delivery = () => {
+const Replace = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
 
-  const infoCodigo = useSelector((state) => state.codigo.infoCodigo);
   const { lastRegister } = useSelector((state) => state.orden);
 
-  const { InfoImpuesto } = useSelector((state) => state.modificadores);
-
-  const InfoUsuario = useSelector((state) => state.user.infoUsuario);
-  const iDelivery = useSelector((state) => state.servicios.serviceDelivery);
-  const { InfoImpuesto: iImpuesto } = useSelector(
-    (state) => state.modificadores
+  const ordenToAnular = useSelector((state) =>
+    state.orden.registered.find((item) => item._id === id)
   );
+  const infoAnulacion = location.state;
+  const [infoGastoByDelivery, setInfoGastoByDelivery] = useState();
+  const [ordenToReplace, setOrdenToReplace] = useState();
+
+  const infoCodigo = useSelector((state) => state.codigo.infoCodigo);
+  const InfoUsuario = useSelector((state) => state.user.infoUsuario);
+  const InfoNegocio = useSelector((state) => state.negocio.infoNegocio);
 
   const [shouldFocusInput, setShouldFocusInput] = useState(false);
-  const [registrar, setRegistrar] = useState(false);
-
   const [redirect, setRedirect] = useState(false);
-
-  const [infoGastoByDelivery, setInfoGastoByDelivery] = useState();
-  const [infoDefault, setInfoDefault] = useState();
-
-  const infoServiceDelivery = useSelector(
-    (state) => state.servicios.serviceDelivery
-  );
 
   const infoTipoGastoDeliveryRecojo = useSelector(
     (state) => state.tipoGasto.iDeliveryRecojo
   );
 
-  // Reservar
-  const handleReservar = async (values) => {
-    const infoGastoByDelivery = {
-      idTipoGasto: infoTipoGastoDeliveryRecojo._id,
-      tipo: infoTipoGastoDeliveryRecojo.name,
-      motivo: `[${String(infoCodigo.codActual).padStart(
-        4,
-        "0"
-      )}] Delivery RECOJO en Transporte ${values.tipoDelivery} - ${
-        values.name
-      }`,
-      date: {
-        fecha: DateCurrent().format4,
-        hora: DateCurrent().format3,
-      },
-      monto: values.price,
-      idUser: InfoUsuario._id,
-    };
+  const handleAnular_Replace = async (data) => {
+    setRedirect(true);
 
-    const infoOrden = {
-      codRecibo: infoCodigo.codActual,
-      dateRecepcion: {
-        fecha: DateCurrent().format4,
-        hora: DateCurrent().format3,
+    const { infoOrden, infoPago } = data;
+
+    const dataToAnular = {
+      idOrden: id,
+      infoAnulacion: {
+        _id: id,
+        ...infoAnulacion,
+        idUser: InfoUsuario._id,
       },
-      Modalidad: "Delivery",
-      Nombre: values.name,
-      idCliente: "",
-      Items: [
-        {
-          identificador: infoServiceDelivery._id,
-          tipo: "servicio",
-          cantidad: 1,
-          item: infoServiceDelivery.nombre,
-          simboloMedida: infoServiceDelivery.simboloMedida,
-          descripcion: "Transporte",
-          price: infoServiceDelivery.precioVenta,
-          total: infoServiceDelivery.precioVenta,
-          disable: {
-            cantidad: true,
-            item: true,
-            descripcion: true,
-            total: false,
-            action: true,
-          },
-        },
-      ],
-      celular: "",
-      direccion: "",
-      datePrevista: {
-        fecha: DateCurrent().format4,
-        hora: defaultHoraPrevista,
+    };
+    const dataToNewOrden = {
+      infoOrden: {
+        ...infoOrden,
+        estado: "registrado",
+        typeRegistro: "normal",
       },
-      dateEntrega: {
-        fecha: "",
-        hora: "",
-      },
-      descuento: 0,
-      estadoPrenda: "pendiente",
-      estado: "reservado",
-      dni: "",
-      factura: false,
-      subTotal: 0,
-      cargosExtras: {
-        beneficios: {
-          puntos: 0,
-          promociones: [],
-        },
-        descuentos: {
-          puntos: 0,
-          promocion: 0,
-        },
-        igv: {
-          valor: InfoImpuesto.IGV,
-          importe: 0,
-        },
-      },
-      totalNeto: 0,
-      modeRegistro: "nuevo",
-      modoDescuento: "Promocion",
-      gift_promo: [],
-      attendedBy: {
-        name: InfoUsuario.name,
-        rol: InfoUsuario.rol,
-      },
-      typeRegistro: "normal",
+      infoPago,
+      infoGastoByDelivery,
     };
 
     await dispatch(
-      AddOrdenServices({
-        infoOrden,
-        rol: InfoUsuario.rol,
-        infoPago: null,
-        infoGastoByDelivery,
-      })
-    );
-    navigate(`/${PrivateRoutes.PRIVATE}/${PrivateRoutes.LIST_ORDER_SERVICE}`);
-  };
-
-  // Registrar
-  const handleRegistrar = async (info) => {
-    const { infoOrden, infoPago, rol } = info;
-    if (infoGastoByDelivery) {
-      setRedirect(true);
-      await dispatch(
-        AddOrdenServices({
-          infoOrden: {
-            ...infoOrden,
-            estado: "registrado",
-            typeRegistro: "normal",
-          },
-          infoPago,
-          rol,
-          infoGastoByDelivery,
-        })
-      ).then((res) => {
-        if (res.error) {
-          console.error(
-            "Error en el servicio al agregar la orden:",
-            res.error.message
-          );
-          navigate(
-            `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.LIST_ORDER_SERVICE}`
-          );
-        }
-      });
-    }
+      AnularRemplazar_OrdensService({ dataToAnular, dataToNewOrden })
+    ).then((res) => {
+      if (res.error) {
+        console.error(
+          "Error al anular y remplazar la orden de servicio:",
+          res.error.message
+        );
+        navigate(
+          `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.LIST_ORDER_SERVICE}`
+        );
+      }
+    });
   };
 
   const handleGetInfoGastoByDelivery = (values) => {
@@ -208,89 +110,10 @@ const Delivery = () => {
       idUser: InfoUsuario._id,
     };
 
-    setInfoDefault({
-      codRecibo: infoCodigo.codActual,
-      dni: "",
-      Nombre: values.name,
-      Modalidad: "Delivery",
-      direccion: "",
-      celular: "",
-      dateRecepcion: {
-        fecha: DateCurrent().format4,
-        hora: DateCurrent().format3,
-      },
-      datePrevista: {
-        fecha: DateCurrent().format4,
-        hora: defaultHoraPrevista,
-      },
-      Items: [
-        {
-          identificador: iDelivery?._id,
-          tipo: "servicio",
-          cantidad: 1,
-          item: iDelivery?.nombre,
-          simboloMedida: iDelivery?.simboloMedida,
-          descripcion: "Transporte",
-          price: iDelivery?.precioVenta,
-          total: iDelivery?.precioVenta,
-          disable: {
-            cantidad: true,
-            item: true,
-            descripcion: true,
-            total: false,
-            action: true,
-          },
-        },
-      ],
-      descuento: 0,
-      modoDescuento: "Promocion",
-      factura: false,
-      subTotal: 0,
-      cargosExtras: {
-        beneficios: {
-          puntos: 0,
-          promociones: [],
-        },
-        descuentos: {
-          puntos: 0,
-          promocion: 0,
-        },
-        igv: {
-          valor: iImpuesto.IGV,
-          importe: 0,
-        },
-      },
-      totalNeto: 0,
-      gift_promo: [],
-      ListPago: [],
-    });
     setInfoGastoByDelivery(infoGastoByDeliveryRecojo);
-
-    setRegistrar(true);
   };
 
   const inputRef = useRef(null);
-
-  const openModal = (values) => {
-    let confirmationEnabled = true;
-
-    modals.openConfirmModal({
-      title: "Reserva de Pedido",
-      centered: true,
-      children: (
-        <Text size="sm">¿ Estas seguro que quieres RESERVAR este pedido ?</Text>
-      ),
-      labels: { confirm: "Si", cancel: "No" },
-      confirmProps: { color: "green" },
-      //onCancel: () => console.log("Cancelado"),
-      onConfirm: () => {
-        if (confirmationEnabled) {
-          confirmationEnabled = false;
-          handleReservar(values);
-        }
-      },
-    });
-  };
 
   const validationSchema = Yup.object().shape({
     name: Yup.string().required("Campo obligatorio"),
@@ -306,6 +129,51 @@ const Delivery = () => {
   }, [shouldFocusInput]);
 
   useEffect(() => {
+    const {
+      idCliente,
+      dni,
+      Nombre,
+      Modalidad,
+      direccion,
+      celular,
+      Items,
+      descuento,
+      modoDescuento,
+      factura,
+      cargosExtras,
+      subTotal,
+      totalNeto,
+    } = ordenToAnular;
+
+    setOrdenToReplace({
+      idCliente,
+      codRecibo: infoCodigo.codActual,
+      dni,
+      Nombre,
+      Modalidad,
+      direccion,
+      celular,
+      dateRecepcion: {
+        fecha: DateCurrent().format4,
+        hora: DateCurrent().format3,
+      },
+      datePrevista: {
+        fecha: DateCurrent().format4,
+        hora: defaultHoraPrevista,
+      },
+      Items,
+      descuento,
+      modoDescuento,
+      factura,
+      subTotal,
+      cargosExtras,
+      totalNeto,
+      gift_promo: [],
+      ListPago: [],
+    });
+  }, [ordenToAnular]);
+
+  useEffect(() => {
     if (lastRegister !== null) {
       const getId = lastRegister._id;
       dispatch(setLastRegister());
@@ -319,29 +187,24 @@ const Delivery = () => {
     <>
       {redirect === false ? (
         <div className="delivery-orden-service">
-          {registrar === false ? (
+          {!infoGastoByDelivery &&
+          ordenToReplace?.Modalidad === "Delivery" &&
+          !InfoNegocio?.hasMobility ? (
             <Formik
               initialValues={{
-                name: "",
+                name: ordenToAnular?.Nombre,
                 price: "",
                 tipoDelivery: "",
-                submitAction: "",
               }}
               validationSchema={validationSchema}
-              onSubmit={(values, { setSubmitting }) => {
-                if (values.submitAction === "reservar") {
-                  openModal(values);
-                } else if (values.submitAction === "registrar") {
-                  handleGetInfoGastoByDelivery(values);
-                }
-                setSubmitting(false);
+              onSubmit={(values) => {
+                handleGetInfoGastoByDelivery(values);
               }}
             >
               {({
                 values,
                 errors,
                 touched,
-                isSubmitting,
                 handleChange,
                 handleSubmit,
                 setFieldValue,
@@ -434,8 +297,8 @@ const Delivery = () => {
                             size="md"
                             label="Nombres del Cliente :"
                             autoComplete="off"
+                            disabled
                             onChange={handleChange}
-                            ref={inputRef}
                             value={values.name}
                           />
                           {errors.name &&
@@ -448,6 +311,7 @@ const Delivery = () => {
                             label="Gasto por Delivery :"
                             size="md"
                             value={values.price}
+                            ref={inputRef}
                             parser={(value) =>
                               value.replace(
                                 new RegExp(`${simboloMoneda}\\s?|(,*)`, "g"),
@@ -478,20 +342,8 @@ const Delivery = () => {
                     </div>
                   </div>
                   <div className="footer-delivery">
-                    <button
-                      type="submit"
-                      className="btn-saved"
-                      disabled={isSubmitting}
-                      onClick={() => setFieldValue("submitAction", "reservar")}
-                    >
-                      Reservar
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn-saved"
-                      onClick={() => setFieldValue("submitAction", "registrar")}
-                    >
-                      Registrar
+                    <button type="submit" className="btn-saved">
+                      Siguiente
                     </button>
                   </div>
                 </Form>
@@ -499,10 +351,10 @@ const Delivery = () => {
             </Formik>
           ) : (
             <OrdenServicio
-              titleMode="REGISTRAR"
-              mode={"NEW"}
-              onAction={handleRegistrar}
-              infoDefault={infoDefault}
+              titleMode="REMPLAZAR"
+              mode="NEW"
+              onAction={handleAnular_Replace}
+              infoDefault={ordenToReplace}
             />
           )}
         </div>
@@ -515,4 +367,4 @@ const Delivery = () => {
   );
 };
 
-export default Delivery;
+export default Replace;

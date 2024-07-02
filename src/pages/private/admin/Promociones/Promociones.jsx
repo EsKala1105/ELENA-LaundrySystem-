@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { ScrollArea } from "@mantine/core";
 import "./promocion.scss";
@@ -150,7 +150,10 @@ const Promociones = () => {
       title: "Eliminar Promocion",
       centered: true,
       children: (
-        <Text size="sm">¿ Estas seguro de eliminar esta promocion ?</Text>
+        <Text size="sm">
+          ¿ Estas seguro de eliminar esta promocion - AL ELIMINAR LA PROMOCION
+          SE ELIMINARAN TODOS LOS CUPONES CREADOS DE ESTA PROMOCION ?
+        </Text>
       ),
       labels: { confirm: "Si", cancel: "No" },
       confirmProps: { color: "red" },

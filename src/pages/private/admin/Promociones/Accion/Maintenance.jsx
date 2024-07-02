@@ -68,9 +68,7 @@ const Maintenance = ({ info, onClose }) => {
         infoAprobada = {
           ...values,
           alcance: "Todos",
-          prenda: listPrendas
-            .filter((service) => service.value !== "Todos")
-            .map((service) => service.value),
+          prenda: [],
         };
       } else {
         infoAprobada = { ...values, alcance: "Parte" };

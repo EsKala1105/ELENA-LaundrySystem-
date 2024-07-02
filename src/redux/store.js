@@ -1,5 +1,4 @@
 import { configureStore } from "@reduxjs/toolkit";
-import anular from "./states/anular";
 import codigo from "./states/codigo";
 import service_order from "./states/service_order";
 import user from "./states/user";
@@ -21,7 +20,6 @@ const store = configureStore({
   reducer: {
     user: user,
     orden: service_order,
-    anular: anular,
     codigo: codigo,
     reporte: reporte,
     cuadre: cuadre,

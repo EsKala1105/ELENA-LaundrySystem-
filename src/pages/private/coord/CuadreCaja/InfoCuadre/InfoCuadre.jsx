@@ -5,8 +5,6 @@ import React from "react";
 import styled from "styled-components";
 import { ingresoDigital } from "../../../../../services/global";
 import { formatThousandsSeparator } from "../../../../../utils/functions";
-import { useState } from "react";
-import { useEffect } from "react";
 
 const InfoCuadreStyle = styled.div`
   display: grid;
@@ -78,8 +76,6 @@ const InfoCuadre = ({
   montoPrevisto,
   stateCuadre,
 }) => {
-  const [showDelete, setShowDelete] = useState("n");
-
   return (
     <InfoCuadreStyle>
       <div className="form-ic">

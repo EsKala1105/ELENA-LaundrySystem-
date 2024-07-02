@@ -6,7 +6,7 @@ import { DateInput } from "@mantine/dates";
 import TimePicker from "react-time-picker";
 import moment from "moment";
 
-const InfoEntrega = ({ paso, descripcion, changeValue, values, iEdit }) => {
+const InfoEntrega = ({ mode, paso, descripcion, changeValue, values }) => {
   const handleGetDay = (date) => {
     const formattedDayOfWeek = moment(date).format("dddd");
     return `${formattedDayOfWeek} : `;
@@ -28,15 +28,14 @@ const InfoEntrega = ({ paso, descripcion, changeValue, values, iEdit }) => {
               onChange={(date) => {
                 changeValue("datePrevista", date);
               }}
-              disabled={iEdit ? (iEdit.modeEditAll ? false : true) : false}
               placeholder="Ingrese Fecha"
               minDate={new Date()}
+              disabled={mode === "UPDATE"}
             />
             <div className="actions-date">
               <button
                 type="button"
                 className="btn-preview"
-                disabled={iEdit ? (iEdit.modeEditAll ? false : true) : false}
                 onClick={() => {
                   const currentDate = new Date();
                   const newDate = new Date(
@@ -47,6 +46,7 @@ const InfoEntrega = ({ paso, descripcion, changeValue, values, iEdit }) => {
                   );
                   changeValue("datePrevista", newDate);
                 }}
+                disabled={mode === "UPDATE"}
               >
                 {"<"}
               </button>
@@ -54,7 +54,6 @@ const InfoEntrega = ({ paso, descripcion, changeValue, values, iEdit }) => {
                 type="button"
                 className="btn-next"
                 tabIndex="6"
-                disabled={iEdit ? (iEdit.modeEditAll ? false : true) : false}
                 onClick={() =>
                   changeValue(
                     "datePrevista",
@@ -63,6 +62,7 @@ const InfoEntrega = ({ paso, descripcion, changeValue, values, iEdit }) => {
                     )
                   )
                 }
+                disabled={mode === "UPDATE"}
               >
                 {">"}
               </button>
@@ -79,12 +79,12 @@ const InfoEntrega = ({ paso, descripcion, changeValue, values, iEdit }) => {
                 const timeString = timeMoment.format("HH:mm");
                 changeValue("dayhour", timeString);
               }}
-              disabled={iEdit ? (iEdit.modeEditAll ? false : true) : false}
               value={
                 moment(values.dayhour, "HH:mm").isValid()
                   ? moment(values.dayhour, "HH:mm").toDate()
                   : null
               }
+              disabled={mode === "UPDATE"}
               amPmAriaLabel="Select AM/PM" // Aquí debe ir una cadena descriptiva
               clockIcon={null} // Esto oculta el icono del reloj, si lo deseas
               clearIcon={null} // Esto oculta el icono de limpieza, si lo deseas

@@ -6,8 +6,10 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { GetAnuladoId } from "../../../../../redux/actions/aAnular";
-import { GetDonadoId } from "../../../../../services/default.services";
+import {
+  GetAnuladoId,
+  GetDonadoId,
+} from "../../../../../services/default.services";
 
 import Nota from "./Nota/Nota";
 
@@ -26,6 +28,7 @@ const Details = ({ IdCliente }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showNotas, setShowNotas] = useState(false);
+  const [infoAnulado, setInfoAnulado] = useState();
   const [dateDonated, setDateDonated] = useState();
   const [statePago, setStatePago] = useState();
 
@@ -34,8 +37,6 @@ const Details = ({ IdCliente }) => {
   );
   const InfoUsuario = useSelector((state) => state.user.infoUsuario);
   const ListUsuarios = useSelector((state) => state.user.listUsuario);
-
-  const iAnulado = useSelector((state) => state.anular.anuladoId);
 
   const handleDateLarge = (fecha) => {
     const fechaObjeto = moment(fecha);
@@ -56,7 +57,8 @@ const Details = ({ IdCliente }) => {
   useEffect(() => {
     const fetchData = async () => {
       if (infoCliente.estadoPrenda === "anulado") {
-        dispatch(GetAnuladoId(IdCliente));
+        const infoAnulado = await GetAnuladoId(IdCliente);
+        setInfoAnulado(infoAnulado);
       }
       if (infoCliente.estadoPrenda === "donado") {
         const fDonacion = await GetDonadoId(IdCliente);
@@ -79,16 +81,16 @@ const Details = ({ IdCliente }) => {
       <h1>Detalle - "{infoCliente.Nombre}"</h1>
       {showNotas === false ? (
         <div className="body-detail">
-          {infoCliente.estadoPrenda === "anulado" && iAnulado ? (
+          {infoCliente.estadoPrenda === "anulado" && infoAnulado ? (
             <div className="anulado-mt">
               <h1>Anulado</h1>
               <textarea
                 rows={5}
-                value={`Motivo : ${iAnulado.motivo}`}
+                value={`Motivo : ${infoAnulado.motivo}`}
                 readOnly={true}
               />
               <span>
-                {iAnulado.fecha} - {iAnulado.hora}
+                {infoAnulado.fecha} - {infoAnulado.hora}
               </span>
             </div>
           ) : null}

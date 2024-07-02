@@ -1,14 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useDispatch, useSelector } from "react-redux";
 
 import {
+  Anular_OrdenService,
   CancelEntrega_OrdenService,
-  UpdateOrdenServices,
+  Entregar_OrdenService,
 } from "../../../../../../redux/actions/aOrdenServices";
 import {
   DateCurrent,
@@ -26,8 +27,6 @@ import Pagar from "./Pagar/Pagar";
 
 import { PrivateRoutes } from "../../../../../../models";
 import "./endProcess.scss";
-import { socket } from "../../../../../../utils/socket/connect";
-import { Notify } from "../../../../../../utils/notify/Notify";
 import { simboloMoneda } from "../../../../../../services/global";
 import { AddPago } from "../../../../../../redux/actions/aPago";
 
@@ -53,28 +52,23 @@ const EndProcess = ({ IdCliente, onClose }) => {
     infoCliente?.totalNeto
   );
 
-  const handleValidarCancelacion = async () => {
+  const handleCancelarEntregar = async () => {
     await dispatch(CancelEntrega_OrdenService(infoCliente._id));
     onClose(false);
   };
 
-  const handleAnular = (infoAnulacion) => {
-    dispatch(
-      UpdateOrdenServices({
+  const handleAnular = async (infoAnulacion) => {
+    await dispatch(
+      Anular_OrdenService({
         id: IdCliente,
-        infoOrden: { estadoPrenda: "anulado" },
-        rol: InfoUsuario.rol,
         infoAnulacion: {
           ...infoAnulacion,
           _id: IdCliente,
           idUser: InfoUsuario._id,
         },
       })
-    ).then((res) => {
-      if (res.payload) {
-        onClose(false);
-      }
-    });
+    );
+    onClose(false);
   };
 
   const openModalPagar = (values) => {
@@ -156,19 +150,10 @@ const EndProcess = ({ IdCliente, onClose }) => {
     }
 
     dispatch(
-      UpdateOrdenServices({
+      Entregar_OrdenService({
         id: IdCliente,
-        infoOrden: {
-          ...infoCliente,
-          dateEntrega: {
-            fecha: DateCurrent().format4,
-            hora: DateCurrent().format3,
-          },
-          estadoPrenda: "entregado",
-          location: 1,
-        },
-        ...(infoGastoByDelivery && { infoGastoByDelivery }),
         rol: InfoUsuario.rol,
+        infoGastoByDelivery,
       })
     ).then((res) => {
       if (res.payload) {
@@ -216,40 +201,6 @@ const EndProcess = ({ IdCliente, onClose }) => {
     mDevolucion: "",
   };
 
-  useEffect(() => {
-    socket.on("server:orderUpdated:child", (data) => {
-      if (infoCliente._id === data._id) {
-        if (data.estadoPrenda === "anulado") {
-          Notify("ORDERN DE SERVICIO ANULADO", "", "fail");
-        } else {
-          Notify("ORDERN DE SERVICIO ACTUALIZADO", "", "warning");
-        }
-        onClose(false);
-      }
-    });
-
-    socket.on("server:updateListOrder:child", (data) => {
-      data.some((orden) => {
-        if (infoCliente._id === orden._id) {
-          if (orden.estadoPrenda === "donado") {
-            Notify("ORDERN DE SERVICIO DONADO", "", "fail");
-          } else {
-            Notify("ORDERN DE SERVICIO ACTUALIZADO", "", "warning");
-          }
-          onClose(false);
-          return true; // Detener la iteración
-        }
-        return false; // Continuar la iteración
-      });
-    });
-
-    return () => {
-      // Remove the event listener when the component unmounts
-      socket.off("server:orderUpdated:child");
-      socket.off("server:updateListOrder:child");
-    };
-  }, []);
-
   return (
     <div className="actions-container">
       <div className="header-ac">
@@ -262,11 +213,6 @@ const EndProcess = ({ IdCliente, onClose }) => {
       <div className="body-ac">
         {onAction === "principal" ? ( // Principal
           <div className="actions-init">
-            {/* {infoCliente.estadoPrenda === 'pendiente' ? (
-              <button type="button" className="btn-exm" onClick={handleButtonClick}>
-                {btnText}
-              </button>
-            ) : null} */}
             {infoCliente.estadoPrenda === "pendiente" &&
             estadoPago.estado === "Completo" ? (
               <button
@@ -317,7 +263,7 @@ const EndProcess = ({ IdCliente, onClose }) => {
               <button
                 type="button"
                 className="btn-exm"
-                onClick={handleValidarCancelacion}
+                onClick={handleCancelarEntregar}
               >
                 Cancelar Entrega
               </button>
@@ -423,7 +369,11 @@ const EndProcess = ({ IdCliente, onClose }) => {
             )}
           </Formik>
         ) : (
-          <Anular onReturn={setOnAction} onAnular={handleAnular} />
+          <Anular
+            onReturn={setOnAction}
+            idOrden={infoCliente._id}
+            onAnular={handleAnular}
+          />
         )}
       </div>
     </div>

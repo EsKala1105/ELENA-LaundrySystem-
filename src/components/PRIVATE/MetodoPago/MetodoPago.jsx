@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import React from "react";
@@ -7,14 +8,14 @@ import { ingresoDigital } from "../../../services/global";
 import { Button, NumberInput } from "@mantine/core";
 import { useFormik } from "formik";
 import { formatThousandsSeparator } from "../../../utils/functions";
+import { useEffect } from "react";
 
 const MetodoPago = ({
-  handlePago,
-  infoPago,
-  totalToPay,
-  handleNoPagar,
+  currentPago,
+  onConfirm,
+  onCancel,
   onClose,
-  modeUse,
+  totalToPay,
 }) => {
   const validationSchema = Yup.object().shape({
     metodoPago: Yup.string().required("Campo obligatorio"),
@@ -23,39 +24,15 @@ const MetodoPago = ({
 
   const formMetodoPago = useFormik({
     initialValues: {
-      metodoPago: infoPago?.metodoPago,
-      total: infoPago ? infoPago.total : +totalToPay === 0 ? 0 : "",
+      metodoPago: "",
+      total: "",
     },
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      handlePagar(values);
+      onConfirm(values);
+      onClose();
     },
   });
-
-  const handlePagar = (info) => {
-    if (totalToPay > 0) {
-      if (info.total <= 0) {
-        if (modeUse === "Edit") {
-          handleNoPagar(infoPago._id);
-        } else {
-          handleNoPagar();
-        }
-      } else {
-        handlePago({
-          ...infoPago,
-          metodoPago: info.metodoPago,
-          total: info.total,
-        });
-      }
-    } else {
-      handlePago({
-        ...infoPago,
-        metodoPago: info.metodoPago,
-        total: 0,
-      });
-    }
-    onClose(false);
-  };
 
   const handleOptionChange = (event) => {
     const mPago = event.target.value;
@@ -74,6 +51,13 @@ const MetodoPago = ({
     );
   };
 
+  useEffect(() => {
+    if (currentPago) {
+      formMetodoPago.setFieldValue("metodoPago", currentPago.metodoPago);
+      formMetodoPago.setFieldValue("total", currentPago.total);
+    }
+  }, [currentPago, totalToPay]);
+
   return (
     <form onSubmit={formMetodoPago.handleSubmit} className="content-metdo-pago">
       <fieldset className="checkbox-group">
@@ -89,9 +73,7 @@ const MetodoPago = ({
               onChange={(e) => handleOptionChange(e)}
             />
             <span className="checkbox-tile">
-              <span className="checkbox-icon">
-                {/* <Taxi className="custom-icon" /> */}
-              </span>
+              <span className="checkbox-icon"></span>
               <span className="checkbox-label">Efectivo</span>
             </span>
           </label>
@@ -130,9 +112,7 @@ const MetodoPago = ({
               onChange={(e) => handleOptionChange(e)}
             />
             <span className="checkbox-tile">
-              <span className="checkbox-icon">
-                {/* <Moto className="custom-icon" /> */}
-              </span>
+              <span className="checkbox-icon"></span>
               <span className="checkbox-label">Tarjeta</span>
             </span>
           </label>
@@ -164,31 +144,26 @@ const MetodoPago = ({
             formMetodoPago.touched.total &&
             validIco(formMetodoPago.errors.total)}
         </div>
-
         <div className="action">
           <Button
             type="submit"
             className="btn-save"
             variant="gradient"
             gradient={
-              infoPago
+              currentPago
                 ? { from: "#11998e", to: "#38ef7d" }
                 : { from: "indigo", to: "cyan" }
             }
           >
-            {totalToPay === 0 ? "Guardar" : infoPago ? "Cambiar" : "Guardar"}
+            {totalToPay === 0 ? "Guardar" : currentPago ? "Cambiar" : "Guardar"}
           </Button>
 
-          {infoPago ? (
+          {currentPago ? (
             <Button
               type="button"
               onClick={() => {
-                if (modeUse === "Edit") {
-                  handleNoPagar(infoPago._id);
-                } else {
-                  handleNoPagar();
-                }
-                onClose(false);
+                onCancel();
+                onClose();
               }}
               className="btn-save"
               variant="gradient"

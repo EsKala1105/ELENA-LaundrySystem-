@@ -231,6 +231,7 @@ const ListPagos = ({
 }) => {
   const dispatch = useDispatch();
   const InfoUsuario = useSelector((state) => state.user.infoUsuario);
+  const spendCuadrados = useSelector((state) => state.cuadre.spendToDay);
   const [showDelete, setShowDelete] = useState("n");
 
   const handleEliminarGasto = (id) => {
@@ -307,7 +308,9 @@ const ListPagos = ({
                       <td>{DateFormat24h(gasto.date.hora)}</td>
                       <td>{formatThousandsSeparator(gasto.monto)}</td>
 
-                      {savedActivated === false && type !== "view" ? (
+                      {savedActivated === false &&
+                      type !== "view" &&
+                      !spendCuadrados.includes(gasto._id) ? (
                         <td
                           className="delete-row"
                           onClick={() => {

@@ -18,8 +18,12 @@ import {
   LS_changePagoOnOrden,
   LS_newOrder,
   LS_updateListOrder,
-  LS_updateOrder,
-  setOrderServiceId,
+  updateAnulacionOrden,
+  updateCancelarEntregaOrden,
+  updateDetalleOrden,
+  updateEntregaOrden,
+  updateFinishReserva,
+  updateNotaOrden,
 } from "../../redux/states/service_order";
 
 import { notifications } from "@mantine/notifications";
@@ -52,7 +56,7 @@ import TimeOut from "../out-of-time.png";
 import moment from "moment";
 import LoaderSpiner from "../../components/LoaderSpinner/LoaderSpiner";
 import { socket } from "../../utils/socket/connect";
-import { GetCuadre } from "../../redux/actions/aCuadre";
+import { GetCuadre, GetPagos_OnCuadreToday } from "../../redux/actions/aCuadre";
 import { GetListUser } from "../../redux/actions/aUser";
 import { getListCategorias } from "../../redux/actions/aCategorias";
 import { getServicios } from "../../redux/actions/aServicios";
@@ -113,6 +117,7 @@ const PrivateMasterLayout = (props) => {
           dispatch(getListCategorias()),
           dispatch(getServicios()),
           dispatch(getListClientes()),
+          dispatch(GetPagos_OnCuadreToday()),
         ];
 
         const responses = await Promise.all(promises);
@@ -166,7 +171,6 @@ const PrivateMasterLayout = (props) => {
             const currentPath = new URL(window.location.href).pathname;
             const dir = `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.FINISH_ORDEN_SERVICE_PENDING}/${r._id}`;
             if (dir !== currentPath) {
-              dispatch(setOrderServiceId(false));
               navigate(dir);
             }
           },
@@ -185,17 +189,35 @@ const PrivateMasterLayout = (props) => {
   }, [reserved]);
 
   useEffect(() => {
-    // ORDER
+    // ORDEN ADD
     socket.on("server:newOrder", (data) => {
       dispatch(LS_newOrder(data));
     });
-    socket.on("server:orderUpdated", (data) => {
-      dispatch(LS_updateOrder(data));
+    // ORDEN UPDATE
+    socket.on("server:updateOrder(ITEMS)", (data) => {
+      dispatch(updateDetalleOrden(data));
     });
+    socket.on("server:updateOrder(FINISH_RESERVA)", (data) => {
+      dispatch(updateFinishReserva(data));
+    });
+    socket.on("server:updateOrder(ENTREGA)", (data) => {
+      dispatch(updateEntregaOrden(data));
+    });
+    socket.on("server:updateOrder(CANCELAR_ENTREGA)", (data) => {
+      dispatch(updateCancelarEntregaOrden(data));
+    });
+    socket.on("server:updateOrder(ANULACION)", (data) => {
+      dispatch(updateAnulacionOrden(data));
+    });
+    socket.on("server:updateOrder(NOTA)", (data) => {
+      dispatch(updateNotaOrden(data));
+    });
+    // ORDEN LIST
     socket.on("server:updateListOrder", (data) => {
       dispatch(LS_updateListOrder(data));
     });
-    socket.on("server:changeCuadre", (data) => {
+    // CUADRE
+    socket.on("server:changeCuadre", () => {
       dispatch(GetCuadre({ date: DateCurrent().format4, id: InfoUsuario._id }));
     });
     // PAGO
@@ -302,12 +324,19 @@ const PrivateMasterLayout = (props) => {
       socket.off("server:newOrder");
       socket.off("server:updateCodigo");
 
-      socket.off("server:orderUpdated");
+      socket.off("server:updateOrder(ITEMS)");
+      socket.off("server:updateOrder(FINISH_RESERVA)");
+      socket.off("server:updateOrder(ENTREGA)");
+      socket.off("server:updateOrder(CANCELAR_ENTREGA)");
+      socket.off("server:updateOrder(ANULACION)");
+      socket.off("server:updateOrder(NOTA)");
+
       socket.off("server:cPago");
       socket.off("server:cGasto");
       socket.off("server:cClientes");
 
       socket.off("server:updateListOrder");
+      socket.off("server:changeCuadre");
 
       socket.off("server:cPricePrendas");
       socket.off("server:cPuntos");

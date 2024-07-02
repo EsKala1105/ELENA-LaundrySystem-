@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import React, { useState } from "react";
@@ -8,15 +9,24 @@ import { ingresoDigital, simboloMoneda } from "../../../../services/global";
 import Tranferencia from "../../../../utils/img/OrdenServicio/Transferencia.png";
 import Efectivo from "../../../../utils/img/OrdenServicio/dinero.png";
 import Tarjeta from "../../../../utils/img/OrdenServicio/card.png";
+import { useEffect } from "react";
+import { handleGetInfoPago } from "../../../../utils/functions";
 
 const InfoPago = ({
+  currentPago,
+  openModalMetodoPago,
   paso,
   descripcion,
   values,
-  iPago,
-  isPortalPago,
-  setIsPortalPago,
 }) => {
+  const [estadoPago, setEstadoPago] = useState();
+
+  useEffect(() => {
+    const listPago = currentPago ? [currentPago] : [];
+    const iPago = handleGetInfoPago(listPago, values.totalNeto);
+    setEstadoPago(iPago);
+  }, [currentPago]);
+
   return (
     <div className="info-pago">
       <div className="title">
@@ -31,25 +41,25 @@ const InfoPago = ({
               <button
                 className="btn-switch"
                 type="button"
-                onClick={() => setIsPortalPago(!isPortalPago)}
+                onClick={() => openModalMetodoPago()}
               >
-                <ButtonSwitch pago={values.pago} />
+                <ButtonSwitch pago={estadoPago?.estado} />
               </button>
             </div>
-            {iPago ? (
+            {currentPago ? (
               <img
                 tabIndex="-1"
                 className={
-                  iPago.metodoPago === "Efectivo"
+                  currentPago.metodoPago === "Efectivo"
                     ? "ico-efect"
-                    : ingresoDigital.includes(iPago?.metodoPago)
+                    : currentPago.metodoPago === ingresoDigital
                     ? "ico-tranf"
                     : "ico-card"
                 }
                 src={
-                  iPago.metodoPago === "Efectivo"
+                  currentPago.metodoPago === "Efectivo"
                     ? Efectivo
-                    : ingresoDigital.includes(iPago?.metodoPago)
+                    : currentPago?.metodoPago === ingresoDigital
                     ? Tranferencia
                     : Tarjeta
                 }
@@ -57,8 +67,8 @@ const InfoPago = ({
               />
             ) : null}
           </div>
-          {iPago ? (
-            <div className="estado-pago">{`${iPago.metodoPago} ${simboloMoneda}${iPago.total} : ${values.pago}`}</div>
+          {currentPago ? (
+            <div className="estado-pago">{`${currentPago.metodoPago} ${simboloMoneda}${currentPago.total} : ${estadoPago?.estado}`}</div>
           ) : null}
         </div>
       </div>

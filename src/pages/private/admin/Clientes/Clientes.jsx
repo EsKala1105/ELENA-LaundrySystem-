@@ -3,25 +3,13 @@
 /* eslint-disable no-unused-vars */
 import { MantineReactTable } from "mantine-react-table";
 import { useDisclosure } from "@mantine/hooks";
-import {
-  Button,
-  NumberInput,
-  ScrollArea,
-  TextInput,
-  Textarea,
-} from "@mantine/core";
+import { Button, ScrollArea, TextInput, Textarea } from "@mantine/core";
 import { useState } from "react";
 import { useMemo } from "react";
-import { useFormik } from "formik";
-import * as Yup from "yup";
 
 import React from "react";
 import { Modal } from "@mantine/core";
-import LoaderSpiner from "../../../../components/LoaderSpinner/LoaderSpiner";
 import { documento } from "../../../../services/global";
-import axios from "axios";
-import { Notify } from "../../../../utils/notify/Notify";
-import { useEffect } from "react";
 import "./clientes.scss";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -29,6 +17,7 @@ import {
   deleteCliente,
   updateCliente,
 } from "../../../../redux/actions/aClientes";
+import ActionCliente from "./ActionCliente/ActionCliente";
 
 const Clientes = () => {
   const [mOptions, { open: openModalOptions, close: closeModalOptions }] =
@@ -39,34 +28,10 @@ const Clientes = () => {
     { open: openModalActionCliente, close: closeModalActionCliente },
   ] = useDisclosure(false);
 
-  const [onLoading, setOnLoading] = useState(false);
   const [rowPick, setRowPick] = useState(null);
-  const [action, setAction] = useState("");
 
   const dispatch = useDispatch();
   const listClientes = useSelector((state) => state.clientes.listClientes);
-
-  const validationSchema = Yup.object().shape({
-    nombre: Yup.string().required("Campo obligatorio"),
-  });
-
-  const formik = useFormik({
-    initialValues: {
-      dni: "",
-      nombre: "",
-      direccion: "",
-      phone: "",
-    },
-    validationSchema: validationSchema,
-    onSubmit: (values) => {
-      setOnLoading(true);
-      if (action === "add") {
-        handleAddClientes(values);
-      } else {
-        handleUpdateCliente(rowPick?._id, values);
-      }
-    },
-  });
 
   const columns = useMemo(
     () => [
@@ -120,9 +85,8 @@ const Clientes = () => {
     []
   );
 
-  const handleAddClientes = async (newCliente) => {
-    dispatch(addCliente(newCliente));
-    setOnLoading(false);
+  const handleAddClientes = async (datosCliente) => {
+    dispatch(addCliente(datosCliente));
     handleCloseAction();
   };
 
@@ -131,29 +95,15 @@ const Clientes = () => {
     setRowPick();
   };
 
-  const handleUpdateCliente = async (id, datosCliente) => {
-    dispatch(updateCliente({ id, datosCliente }));
-    setOnLoading(false);
+  const handleUpdateCliente = async (datosCliente) => {
+    dispatch(updateCliente({ id: rowPick._id, datosCliente }));
     handleCloseAction();
   };
 
   const handleCloseAction = () => {
-    formik.resetForm();
     setRowPick();
-    setAction("");
     closeModalActionCliente();
   };
-
-  useEffect(() => {
-    if (rowPick) {
-      formik.setFieldValue("dni", rowPick?.dni);
-      formik.setFieldValue("nombre", rowPick?.nombre);
-      formik.setFieldValue("direccion", rowPick?.direccion);
-      formik.setFieldValue("phone", rowPick?.phone);
-    } else {
-      formik.resetForm();
-    }
-  }, [rowPick]);
 
   return (
     <div className="content-clientes">
@@ -163,7 +113,6 @@ const Clientes = () => {
           type="button"
           onClick={() => {
             setRowPick();
-            setAction("add");
             openModalActionCliente();
           }}
           className="btn-save"
@@ -274,7 +223,6 @@ const Clientes = () => {
           <Button
             type="button"
             onClick={() => {
-              setAction("edit");
               closeModalOptions();
               openModalActionCliente();
             }}
@@ -306,68 +254,18 @@ const Clientes = () => {
           handleCloseAction();
         }}
         size="auto"
-        title={""}
+        title={`${
+          rowPick
+            ? "Actualizar informacion del cliente"
+            : "Agregar nuevo cliente"
+        }`}
         scrollAreaComponent={ScrollArea.Autosize}
         centered
       >
-        <form onSubmit={formik.handleSubmit}>
-          {onLoading ? (
-            <div className="loading-cupon">
-              <LoaderSpiner />
-            </div>
-          ) : null}
-          <div
-            className="form-cliente"
-            style={{ visibility: onLoading ? "hidden" : "visible" }}
-          >
-            <TextInput
-              name="nombre"
-              label="Nombre :"
-              value={formik.values.nombre}
-              onChange={(e) => {
-                formik.setFieldValue("nombre", e.target.value);
-              }}
-              required
-              autoComplete="off"
-            />
-            <TextInput
-              name="dni"
-              label={`${documento} : `}
-              value={formik.values.dni}
-              onChange={(e) => {
-                formik.setFieldValue("dni", e.target.value);
-              }}
-              autoComplete="off"
-            />
-            <Textarea
-              name="direccion"
-              label="Direccion"
-              placeholder="Ingrese Direccion"
-              onChange={(e) => {
-                formik.setFieldValue("direccion", e.target.value);
-              }}
-              value={formik.values.direccion}
-            />
-            <TextInput
-              name="phone"
-              onChange={formik.handleChange}
-              label="Numero :"
-              autoComplete="off"
-              value={formik.values.phone}
-            />
-            {action === "edit" ? (
-              <div className="info-puntaje">
-                <span>Total de Puntos : </span>
-                <span>{rowPick?.scoreTotal}</span>
-              </div>
-            ) : null}
-
-            <Button type="submit" className="btn-save" color="blue">
-              {action === "add" ? "REGISTRAR" : "ACTUALIZAR"}
-            </Button>
-            <div />
-          </div>
-        </form>
+        <ActionCliente
+          info={rowPick}
+          onAction={rowPick ? handleUpdateCliente : handleAddClientes}
+        />
       </Modal>
     </div>
   );

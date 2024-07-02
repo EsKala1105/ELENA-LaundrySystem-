@@ -26,21 +26,13 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { GetOrdenServices_DateRange } from "../../../../../redux/actions/aOrdenServices";
 import { GetMetas } from "../../../../../redux/actions/aMetas";
-import {
-  setLastRegister,
-  setOrderServiceId,
-} from "../../../../../redux/states/service_order";
+import { setLastRegister } from "../../../../../redux/states/service_order";
 
 import EndProcess from "../Actions/EndProcess/EndProcess";
 import Details from "../Details/Details";
 import BarProgress from "../../../../../components/PRIVATE/BarProgress/BarProgress";
 import { Roles } from "../../../../../models";
-import {
-  confMoneda,
-  documento,
-  simboloMoneda,
-  tipoMoneda,
-} from "../../../../../services/global";
+import { documento } from "../../../../../services/global";
 import { useRef } from "react";
 
 const List = () => {
@@ -490,7 +482,6 @@ const List = () => {
   };
 
   useEffect(() => {
-    dispatch(setOrderServiceId(false));
     dispatch(setLastRegister());
   }, []);
 

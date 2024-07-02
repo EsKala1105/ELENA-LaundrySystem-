@@ -39,6 +39,8 @@ export const AddOrdenServices = createAsyncThunk(
         dataSend
       );
 
+      Notify("Registro de Orden Exitoso", "", "success");
+
       const res = response.data;
       const { newOrder } = res;
 
@@ -79,33 +81,59 @@ export const AddOrdenServices = createAsyncThunk(
   }
 );
 
-export const UpdateOrdenServices = createAsyncThunk(
-  "service_order/UpdateOrdenServices",
-  async ({
-    id,
-    infoOrden,
-    infoPago,
-    rol,
-    infoAnulacion,
-    infoGastoByDelivery,
-  }) => {
+export const UpdateDetalleOrdenServices = createAsyncThunk(
+  "service_order/UpdateDetalleOrdenServices",
+  async ({ id, infoOrden, rol }) => {
+    try {
+      const data = {
+        infoOrden,
+        rol,
+      };
+
+      const response = await axios.put(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/lava-ya/update-factura/detalle/${id}`,
+        data
+      );
+
+      Notify("Actualziacion de Orden Exitosa", "", "success");
+
+      const res = response.data;
+      socket.emit("client:updateOrder(ITEMS)", res);
+
+      return res;
+    } catch (error) {
+      // Puedes manejar los errores aquí
+      console.log(error.response.data.mensaje);
+      Notify("Error", "No se actualizo la Orden de Servicio", "fail");
+      throw new Error(error);
+    }
+  }
+);
+
+export const FinalzarReservaOrdenService = createAsyncThunk(
+  "service_order/FinalzarReservaOrdenService",
+  async ({ id, infoOrden, infoPago, rol }) => {
     try {
       const dataSend = {
         infoOrden,
         rol,
         ...(infoPago && { infoPago }),
-        ...(infoOrden.estadoPrenda === "anulado" && { infoAnulacion }),
-        ...(infoOrden.Modalidad === "Delivery" &&
-          infoOrden.estadoPrenda === "entregado" && { infoGastoByDelivery }),
       };
       const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/update-factura/${id}`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/lava-ya/update-factura/finalizar-reserva/${id}`,
         dataSend
       );
-      const res = response.data;
 
-      socket.emit("client:updateOrder", res);
+      Notify("Registro Éxito", "", "success");
+
+      const res = response.data;
       const { orderUpdated } = res;
+
+      socket.emit("client:updateOrder(FINISH_RESERVA)", orderUpdated);
 
       if ("listNewsPagos" in res) {
         const { listNewsPagos } = res;
@@ -116,11 +144,6 @@ export const UpdateOrdenServices = createAsyncThunk(
           };
           socket.emit("client:cPago", pago);
         });
-      }
-
-      if ("newGasto" in res) {
-        const { newGasto } = res;
-        socket.emit("client:cGasto", newGasto);
       }
 
       if ("changeCliente" in res) {
@@ -138,6 +161,50 @@ export const UpdateOrdenServices = createAsyncThunk(
   }
 );
 
+export const Entregar_OrdenService = createAsyncThunk(
+  "service_order/Entregar_OrdenService",
+  async ({ id, rol, infoGastoByDelivery }) => {
+    try {
+      const dataSend = {
+        rol,
+        ...(infoGastoByDelivery && { infoGastoByDelivery }),
+      };
+      // Lógica para cancelar entrega en el backend
+      const response = await axios.put(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/lava-ya/update-factura/entregar/${id}`,
+        dataSend
+      );
+
+      const res = response.data;
+      const { orderUpdated } = res;
+
+      socket.emit("client:updateOrder(ENTREGA)", orderUpdated);
+
+      if ("newGasto" in res) {
+        const { newGasto } = res;
+        socket.emit("client:cGasto", newGasto);
+      }
+
+      if ("changeCliente" in res) {
+        const { changeCliente } = res;
+        socket.emit("client:cClientes", changeCliente);
+      }
+
+      return orderUpdated;
+    } catch (error) {
+      console.error("Error al cancelar entrega:", error);
+      Notify(
+        "Error",
+        "No se pudo realizar la entrega de la Orden de Servicio",
+        "fail"
+      );
+      throw new Error(error);
+    }
+  }
+);
+
 export const CancelEntrega_OrdenService = createAsyncThunk(
   "service_order/CancelEntrega_OrdenService",
   async (idOrden) => {
@@ -146,14 +213,13 @@ export const CancelEntrega_OrdenService = createAsyncThunk(
       const response = await axios.post(
         `${
           import.meta.env.VITE_BACKEND_URL
-        }/api/lava-ya/cancel-entrega/${idOrden}`
+        }/api/lava-ya/update-factura/cancelar-entregar/${idOrden}`
       );
 
       const res = response.data;
       const { orderUpdated } = res;
 
-      socket.emit("client:updateOrder", res);
-
+      socket.emit("client:updateOrder(CANCELAR_ENTREGA)", orderUpdated);
       Notify("Éxito", "Entrega cancelada correctamente", "success");
 
       if ("changeCliente" in res) {
@@ -169,6 +235,139 @@ export const CancelEntrega_OrdenService = createAsyncThunk(
         "No se pudo realizar la cancelación de la Orden de Servicio",
         "fail"
       );
+      throw new Error(error);
+    }
+  }
+);
+
+export const Anular_OrdenService = createAsyncThunk(
+  "service_order/Anular_OrdenService",
+  async ({ id, infoAnulacion }) => {
+    try {
+      // Lógica para cancelar entrega en el backend
+      const response = await axios.put(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/lava-ya/update-factura/anular/${id}`,
+        { infoAnulacion }
+      );
+
+      const orderUpdated = response.data;
+      const { orderAnulado } = orderUpdated;
+
+      socket.emit("client:updateOrder(ANULACION)", orderAnulado);
+      Notify("Éxito", "Orden de Servicio Anulado", "success");
+
+      if ("changeCliente" in orderUpdated) {
+        const { changeCliente } = orderUpdated;
+        socket.emit("client:cClientes", changeCliente);
+      }
+
+      return orderAnulado;
+    } catch (error) {
+      console.error("Error al ANULACION Oden de Servicio:", error);
+      Notify(
+        "Error",
+        "No se pudo realizar la ANULACION la Orden de Servicio",
+        "fail"
+      );
+      throw new Error(error);
+    }
+  }
+);
+
+export const Nota_OrdenService = createAsyncThunk(
+  "service_order/Nota_OrdenService",
+  async ({ id, infoNotas }) => {
+    try {
+      // Lógica para cancelar entrega en el backend
+      const response = await axios.put(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/lava-ya/update-factura/nota/${id}`,
+        { infoNotas }
+      );
+
+      const orderUpdated = response.data;
+
+      socket.emit("client:updateOrder(NOTA)", orderUpdated);
+      Notify("Éxito", "Nota acttualizada en Orden de Servicio", "success");
+
+      return orderUpdated;
+    } catch (error) {
+      console.error("Error al actualizar Nota en Orden de Servicio:", error);
+      Notify(
+        "Error",
+        "No se pudo realizar la actualizacion en la NOTA en la Orden de Servicio",
+        "fail"
+      );
+      throw new Error(error);
+    }
+  }
+);
+
+export const AnularRemplazar_OrdensService = createAsyncThunk(
+  "service_order/AnularRemplazar_OrdensService",
+  async ({ dataToNewOrden, dataToAnular }) => {
+    try {
+      const { infoOrden, infoPago, infoGastoByDelivery } = dataToNewOrden;
+      const dataSend = {
+        dataToNewOrden: {
+          infoOrden,
+          ...(infoPago && { infoPago }),
+          ...(infoOrden.Modalidad === "Delivery" &&
+            infoGastoByDelivery && { infoGastoByDelivery }),
+        },
+        dataToAnular,
+      };
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/anular-to-replace`,
+        dataSend
+      );
+
+      const res = response.data;
+      const { newOrder, orderAnulado } = res;
+
+      if ("listNewsPagos" in res) {
+        const { listNewsPagos } = res;
+        listNewsPagos.map((p) => {
+          const pago = {
+            tipo: "added",
+            info: p,
+          };
+          socket.emit("client:cPago", pago);
+        });
+      }
+
+      if ("newGasto" in res) {
+        const { newGasto } = res;
+        socket.emit("client:cGasto", newGasto);
+      }
+
+      if ("listChangeCliente" in res) {
+        const { listChangeCliente } = res;
+        listChangeCliente.map((changeCliente) => {
+          socket.emit("client:cClientes", changeCliente);
+        });
+      }
+
+      if ("newCodigo" in res) {
+        const { newCodigo } = res;
+        socket.emit("client:updateCodigo", newCodigo);
+      }
+
+      socket.emit("client:updateOrder(ANULACION)", orderAnulado);
+      socket.emit("client:newOrder", newOrder);
+
+      Notify("Exitoso", "Anulacion y Remplazo Exitoso", "success");
+
+      return {
+        newOrder,
+        orderAnulado,
+      };
+    } catch (error) {
+      console.log(error.response.data.mensaje);
+      Notify("Error", "No se registro la Orden de Servicio", "fail");
       throw new Error(error);
     }
   }

@@ -79,3 +79,25 @@
     justify-content: space-between;
   }
 }
+
+.portal-notificacion-promociones {
+  background-color: #ffcccb;
+  border: 1px solid #ff4444;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 400px;
+  margin: 20px auto;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  h2 {
+    color: #d8000c;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  p {
+    color: #333;
+    font-size: 16px;
+    text-align: center;
+  }
+}

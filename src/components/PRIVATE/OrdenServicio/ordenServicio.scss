@@ -15,7 +15,7 @@
       width: 100%;
       max-width: 800px;
       padding: 10px 15px;
-      padding-right: 30px;
+      // padding-right: 30px;
       place-items: center;
       border: 1px solid silver;
       border-radius: 15px;
@@ -272,6 +272,17 @@
       display: grid !important;
       gap: 10px;
       place-items: center;
+    }
+  }
+}
+
+@media only screen and (max-width: 400px) {
+  .container {
+    padding: 0 !important;
+    .principal-data {
+      .info-servicios {
+        max-width: 300px;
+      }
     }
   }
 }

@@ -7,20 +7,22 @@ import { Button, TextInput } from "@mantine/core";
 import Portal from "../../Portal/Portal";
 import axios from "axios";
 import { useSelector } from "react-redux";
+import { useEffect } from "react";
 
 const InfoDescuento = ({
   paso,
   descripcion,
   changeValue,
   values,
+  iCliente,
+  validCupon,
   setListCupones,
   listCupones,
-  iCliente,
-  setResValidCupon,
-  resValidCupon,
+  onDescuento,
+  setOnDescuento,
 }) => {
-  const [stateDescuento, setStateDescuento] = useState(false);
-  const [cupon, setCupon] = useState();
+  const [codigoCupon, setCodigoCupon] = useState();
+  const [infoCupon, setInfoCupon] = useState(null);
 
   const [PortalValidPromocion, setPortalValiPromocion] = useState(false);
 
@@ -28,9 +30,10 @@ const InfoDescuento = ({
 
   const handleGetOpcionDescuento = (estado) => {
     if (estado === "SI") {
-      setStateDescuento(true);
-      changeValue("onDescuento", true);
+      setOnDescuento(true);
+      changeValue("modoDescuento", "Promocion");
     } else {
+      setOnDescuento(false);
       setListCupones([]);
     }
   };
@@ -44,29 +47,9 @@ const InfoDescuento = ({
   };
 
   const handleCancelarDescuento = () => {
-    setStateDescuento(false);
     setListCupones([]);
-    changeValue("onDescuento", false);
+    setOnDescuento(false);
     changeValue("modoDescuento", "Promocion");
-    // cancelar o volver a recargar el monto calculado
-  };
-
-  const validCupon = async (codigoCupon) => {
-    try {
-      const response = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/lava-ya/validar-cupon/${codigoCupon}`
-      );
-      const data = response.data;
-      await setResValidCupon(data);
-      return data;
-    } catch (error) {
-      // Captura errores y devuelve un mensaje de error genérico
-      return {
-        mensaje: "Error al hacer la solicitud: " + error.message,
-      };
-    }
   };
 
   return (
@@ -76,7 +59,7 @@ const InfoDescuento = ({
         <h2>{descripcion}</h2>
       </div>
       <div className="body">
-        {stateDescuento ? (
+        {onDescuento ? (
           <>
             <Button
               className="cancel-descuento"
@@ -92,36 +75,29 @@ const InfoDescuento = ({
                 name="sw-tipo-descuento"
                 defaultValue={values.modoDescuento === "Puntos" ? false : true}
                 handleChange={handleGetTipoDescuento}
-                // colorOn=""
-                // colorOff=""
-                // disabled=""
               />
             </div>
           </>
         ) : null}
-        {stateDescuento === false ? (
+        {onDescuento === false ? (
           <div className="input-switch">
             <SwtichDimension
-              //   title=""
               onSwitch="SI"
               offSwitch="NO"
               name="sw-stado-descuento"
-              defaultValue={values.onDescuento}
+              defaultValue={onDescuento}
               handleChange={handleGetOpcionDescuento}
-              // colorOn=""
-              // colorOff=""
-              // disabled=""
             />
           </div>
         ) : null}
-        {values.modoDescuento === "Promocion" && stateDescuento ? (
+        {values.modoDescuento === "Promocion" && onDescuento ? (
           <Button
             type="button"
             className="btn-promocion"
             onClick={() => {
               setPortalValiPromocion(true);
-              setResValidCupon(null);
-              setCupon();
+              setInfoCupon(null);
+              setCodigoCupon();
             }}
           >
             Agregar Promocion
@@ -141,87 +117,85 @@ const InfoDescuento = ({
               className="input-promotion"
               radius="md"
               onChange={(e) => {
-                setCupon(e.target.value);
-                setResValidCupon(null);
+                setCodigoCupon(e.target.value);
+                setInfoCupon(null);
               }}
               autoComplete="off"
             />
             <button
               type="button"
               className="btn-valid"
-              onClick={() => validCupon(cupon)}
+              onClick={async () => {
+                const infoValidacion = await validCupon(codigoCupon);
+                setInfoCupon(infoValidacion);
+              }}
             >
               Validar
             </button>
-
-            {resValidCupon ? (
+            {infoCupon ? (
               <>
                 <textarea
                   style={
-                    resValidCupon?.validacion === true
+                    infoCupon?.validacion === true
                       ? { borderColor: "#00e676" }
                       : { borderColor: "#f5532f" }
                   }
                   className="description-info"
-                  defaultValue={
-                    resValidCupon?.validacion === true
-                      ? resValidCupon?.promocion.descripcion
-                      : resValidCupon?.respuesta
+                  value={
+                    infoCupon?.validacion === true
+                      ? infoCupon?.promocion.descripcion
+                      : infoCupon?.respuesta
                   }
                   readOnly
                 />
-                {resValidCupon?.validacion === true ? (
+                {infoCupon?.validacion === true ? (
                   <button
                     type="button"
                     className="btn-add"
                     onClick={() => {
                       // Buscar si ya existe un registro en la lista
                       const exists = listCupones.some(
-                        (c) => c.codigoCupon === cupon
+                        (c) => c.codigoCupon === codigoCupon
                       );
                       if (!exists) {
                         let dscFinal = 0;
-                        if (
-                          resValidCupon.promocion.tipoPromocion === "Varios"
-                        ) {
+                        if (infoCupon.promocion.tipoPromocion === "Varios") {
                           if (
-                            resValidCupon.promocion.tipoDescuento ===
-                            "Porcentaje"
+                            infoCupon.promocion.tipoDescuento === "Porcentaje"
                           ) {
                             dscFinal = 0;
                           } else {
-                            dscFinal = resValidCupon.promocion.descuento;
+                            dscFinal = infoCupon.promocion.descuento;
                           }
                         } else {
                           // tipoPromocion es Unico
                           if (
-                            resValidCupon.promocion.tipoDescuento ===
-                              "Gratis" &&
-                            resValidCupon.promocion.tipoPromocion === "Unico"
+                            infoCupon.promocion.tipoDescuento === "Gratis" &&
+                            infoCupon.promocion.tipoPromocion === "Unico"
                           ) {
                             const prendaEncontrada = iServicios.find(
-                              (p) => p._id === resValidCupon.promocion.prenda[0]
+                              (p) => p._id === infoCupon.promocion.prenda[0]
                             );
                             dscFinal =
                               prendaEncontrada.precioVenta *
-                              resValidCupon.promocion.descuento;
+                              infoCupon.promocion.descuento;
                           }
                         }
 
                         const cuponActual = {
-                          codigoCupon: cupon,
-                          codigoPromocion: resValidCupon.promocion.codigo,
-                          descripcion: resValidCupon.promocion.descripcion,
-                          prenda: resValidCupon.promocion.prenda,
-                          alcance: resValidCupon.promocion.alcance,
+                          cantidadMin: infoCupon.promocion.cantidadMin,
+                          codigoCupon: codigoCupon,
+                          codigoPromocion: infoCupon.promocion.codigo,
+                          descripcion: infoCupon.promocion.descripcion,
+                          prenda: infoCupon.promocion.prenda,
+                          alcance: infoCupon.promocion.alcance,
                           nMultiplicador:
-                            resValidCupon.promocion.tipoDescuento ===
-                            "Porcentaje"
-                              ? resValidCupon.promocion.descuento / 100
-                              : resValidCupon.promocion.descuento,
+                            infoCupon.promocion.tipoDescuento === "Porcentaje"
+                              ? infoCupon.promocion.descuento / 100
+                              : infoCupon.promocion.descuento,
                           descuento: dscFinal,
-                          tipoDescuento: resValidCupon.promocion.tipoDescuento,
-                          tipoPromocion: resValidCupon.promocion.tipoPromocion,
+                          tipoDescuento: infoCupon.promocion.tipoDescuento,
+                          tipoPromocion: infoCupon.promocion.tipoPromocion,
                         };
 
                         setListCupones([...listCupones, cuponActual]);
@@ -232,8 +206,8 @@ const InfoDescuento = ({
 
                         alert("¡Se agregó correctamente!");
                         setPortalValiPromocion(false);
-                        setResValidCupon(null);
-                        setCupon();
+                        setInfoCupon(null);
+                        setCodigoCupon();
                       } else {
                         // Si ya existe un registro con el mismo codigoPromocion, puedes manejarlo como desees
                         alert("¡El registro ya existe!");

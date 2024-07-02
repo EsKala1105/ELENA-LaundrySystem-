@@ -4,7 +4,9 @@ import { Navigate, Route } from "react-router-dom";
 import { PrivateRoutes, Roles } from "../../models/index";
 
 import {
+  AnularReplace,
   EditOrdenService,
+  FinishReserva,
   ListOrdenService,
 } from "../../pages/private/coord/index";
 
@@ -130,7 +132,11 @@ const Private = () => {
           />
           <Route
             path={`${PrivateRoutes.FINISH_ORDEN_SERVICE_PENDING}/:id`}
-            element={<EditOrdenService />}
+            element={<FinishReserva />}
+          />
+          <Route
+            path={`${PrivateRoutes.ANULAR_REMPLAZAR}/:id`}
+            element={<AnularReplace />}
           />
           <Route
             path={`${PrivateRoutes.IMPRIMIR_ORDER_SERVICE}/:id`}

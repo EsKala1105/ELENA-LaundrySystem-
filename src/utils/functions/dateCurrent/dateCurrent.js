@@ -27,6 +27,18 @@ export function DateCurrent() {
   };
 }
 
+export function formatFecha(fecha) {
+  const fechaFormateada = moment(fecha).format("YYYY-MM-DD");
+
+  return fechaFormateada;
+}
+
+export function formatHora(hora) {
+  const horaFormateada = moment(hora).format("HH:mm");
+
+  return horaFormateada;
+}
+
 export function DateDetail(date) {
   const fechaOriginal = moment(date);
   const fechaTransformada = fechaOriginal.format("dddd, D [de] MMMM [de] YYYY");

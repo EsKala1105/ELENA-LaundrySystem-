@@ -464,16 +464,12 @@ const Pendientes = () => {
       }
     };
 
-    socket.on("server:orderUpdated:child", (data) => handleUpdate(data));
-
     socket.on("server:updateListOrder:child", (data) => {
       data.forEach((orden) => {
         handleUpdate(orden);
       });
     });
     return () => {
-      // Remove the event listener when the component unmounts
-      socket.off("server:orderUpdated:child");
       socket.off("server:updateListOrder:child");
     };
   }, [infoPendientes]);

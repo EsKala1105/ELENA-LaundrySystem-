@@ -1,10 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   AddOrdenServices,
+  AnularRemplazar_OrdensService,
+  Anular_OrdenService,
   CancelEntrega_OrdenService,
+  Entregar_OrdenService,
+  FinalzarReservaOrdenService,
   GetOrdenServices_DateRange,
-  UpdateOrdenServices,
-  // UpdateOrdenServices_PagoEntrega,
+  Nota_OrdenService,
+  UpdateDetalleOrdenServices,
 } from "../actions/aOrdenServices";
 import { handleGetInfoPago } from "../../utils/functions";
 
@@ -20,9 +24,6 @@ const service_order = createSlice({
     error: null,
   },
   reducers: {
-    setOrderServiceId: (state, action) => {
-      state.orderServiceId = action.payload;
-    },
     updateLastRegister: (state, action) => {
       state.lastRegister = {
         ...state.lastRegister,
@@ -32,31 +33,76 @@ const service_order = createSlice({
     setLastRegister: (state) => {
       state.lastRegister = null;
     },
+    // UPDATE INFO ORDEN
+    updateDetalleOrden: (state, action) => {
+      const index = state.registered.findIndex(
+        (item) => item._id === action.payload._id
+      );
+      state.registered[index].Items = action.payload.Items;
+    },
+    updateFinishReserva: (state, action) => {
+      // Quitar Orden de Reserva
+      state.reserved = state.reserved.filter(
+        (item) => item._id !== action.payload._id
+      );
+
+      const index = state.registered.findIndex(
+        (item) => item._id === action.payload._id
+      );
+      if (index !== -1) {
+        // si existe acutaliza
+        state.registered[index] = action.payload;
+      } else {
+        // si no y agregalo
+        if (action.payload.estado === "registrado") {
+          state.registered.push(action.payload);
+        }
+      }
+    },
+    updateEntregaOrden: (state, action) => {
+      const index = state.registered.findIndex(
+        (item) => item._id === action.payload._id
+      );
+
+      if (index !== -1) {
+        const updatedOrder = state.registered[index];
+        updatedOrder.estadoPrenda = action.payload.estadoPrenda;
+        updatedOrder.location = action.payload.location;
+        updatedOrder.dateEntrega = action.payload.dateEntrega;
+      }
+    },
+    updateCancelarEntregaOrden: (state, action) => {
+      const index = state.registered.findIndex(
+        (item) => item._id === action.payload._id
+      );
+
+      if (index !== -1) {
+        const updatedOrder = state.registered[index];
+        updatedOrder.estadoPrenda = action.payload.estadoPrenda;
+        updatedOrder.dateEntrega = action.payload.dateEntrega;
+      }
+    },
+    updateAnulacionOrden: (state, action) => {
+      const index = state.registered.findIndex(
+        (item) => item._id === action.payload._id
+      );
+
+      if (index !== -1) {
+        const updatedOrder = state.registered[index];
+        updatedOrder.estadoPrenda = action.payload.estadoPrenda;
+      }
+    },
     updateNotaOrden: (state, action) => {
       const index = state.registered.findIndex(
         (item) => item._id === action.payload._id
       );
-      if (index !== -1) state.registered[index] = action.payload;
-      else state.registered.push(action.payload);
-    },
-    LS_updateOrder: (state, action) => {
-      // Busca si existe un elemento con el mismo _id en state.registered
-      const eRegistered = state.registered.findIndex(
-        (item) => item._id === action.payload._id
-      );
-      const eReserved = state.reserved.some(
-        (item) => item._id === action.payload._id
-      );
-      if (eRegistered !== -1) {
-        // Si existe, actualiza las propiedades existentes en action.payload en el elemento correspondiente
-        Object.assign(state.registered[eRegistered], action.payload);
-      } else if (eReserved && action.payload.estado === "registrado") {
-        state.reserved = state.reserved.filter(
-          (item) => item._id !== action.payload._id
-        );
-        state.registered.push(action.payload);
+
+      if (index !== -1) {
+        const updatedOrder = state.registered[index];
+        updatedOrder.notas = action.payload.notas;
       }
     },
+    // ---------------------- //
     LS_updateListOrder: (state, action) => {
       const listOrderUpdated = action.payload;
       listOrderUpdated.map((order) => {
@@ -205,35 +251,150 @@ const service_order = createSlice({
       .addCase(AddOrdenServices.rejected, (state) => {
         state.isLoading = false;
       })
-      // Update
-      .addCase(UpdateOrdenServices.pending, (state) => {
+      // Update Items
+      .addCase(UpdateDetalleOrdenServices.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(UpdateOrdenServices.fulfilled, (state, action) => {
+      .addCase(UpdateDetalleOrdenServices.fulfilled, (state, action) => {
         state.isLoading = false;
         const index = state.registered.findIndex(
           (item) => item._id === action.payload._id
         );
-        if (index !== -1 && action.payload.estado === "registrado") {
-          // si existe acutaliza
-          state.registered[index] = action.payload;
-        } else {
-          // si no y esta es
-          if (action.payload.estado === "registrado") {
-            state.registered.push(action.payload);
-          }
-        }
-
-        // Siempre q se actualiza es por ya esta registrado x eso si existe
-        // alguna orden con id en reserved se quita
-
+        state.registered[index].Items = action.payload.Items;
+      })
+      .addCase(UpdateDetalleOrdenServices.rejected, (state) => {
+        state.isLoading = false;
+      })
+      // Finalizar Reserva
+      .addCase(FinalzarReservaOrdenService.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(FinalzarReservaOrdenService.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.reserved = state.reserved.filter(
           (item) => item._id !== action.payload._id
         );
+        state.registered.push(action.payload);
       })
-      .addCase(UpdateOrdenServices.rejected, (state) => {
+      .addCase(FinalzarReservaOrdenService.rejected, (state) => {
         state.isLoading = false;
+      })
+      // Update Entregar
+      .addCase(Entregar_OrdenService.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(Entregar_OrdenService.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.registered.findIndex(
+          (item) => item._id === action.payload._id
+        );
+
+        if (index !== -1) {
+          const updatedOrder = state.registered[index];
+          updatedOrder.estadoPrenda = action.payload.estadoPrenda;
+          updatedOrder.location = action.payload.location;
+          updatedOrder.dateEntrega = action.payload.dateEntrega;
+        }
+      })
+      .addCase(Entregar_OrdenService.rejected, (state) => {
+        state.isLoading = false;
+      })
+      // Update Cancelar Entrega
+      .addCase(CancelEntrega_OrdenService.pending, (state) => {
+        state.isLoading = true;
+        state.infoServiceOrder = false;
+        state.error = null;
+      })
+      .addCase(CancelEntrega_OrdenService.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.registered.findIndex(
+          (item) => item._id === action.payload._id
+        );
+
+        if (index !== -1) {
+          const updatedOrder = state.registered[index];
+          updatedOrder.estadoPrenda = action.payload.estadoPrenda;
+          updatedOrder.dateEntrega = action.payload.dateEntrega;
+        }
+      })
+      .addCase(CancelEntrega_OrdenService.rejected, (state, action) => {
+        state.isLoading = false;
+        state.infoServiceOrder = false;
+        state.error = action.error.message;
+      })
+      // Update Anulacion
+      .addCase(Anular_OrdenService.pending, (state) => {
+        state.isLoading = true;
+        state.infoServiceOrder = false;
+        state.error = null;
+      })
+      .addCase(Anular_OrdenService.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.registered.findIndex(
+          (item) => item._id === action.payload._id
+        );
+
+        if (index !== -1) {
+          const updatedOrder = state.registered[index];
+          updatedOrder.estadoPrenda = action.payload.estadoPrenda;
+        }
+      })
+      .addCase(Anular_OrdenService.rejected, (state, action) => {
+        state.isLoading = false;
+        state.infoServiceOrder = false;
+        state.error = action.error.message;
+      })
+      // Update Nota
+      .addCase(Nota_OrdenService.pending, (state) => {
+        state.isLoading = true;
+        state.infoServiceOrder = false;
+        state.error = null;
+      })
+      .addCase(Nota_OrdenService.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const index = state.registered.findIndex(
+          (item) => item._id === action.payload._id
+        );
+
+        if (index !== -1) {
+          const updatedOrder = state.registered[index];
+          updatedOrder.notas = action.payload.notas;
+        }
+      })
+      .addCase(Nota_OrdenService.rejected, (state, action) => {
+        state.isLoading = false;
+        state.infoServiceOrder = false;
+        state.error = action.error.message;
+      })
+      // Anular y Remplazar
+      .addCase(AnularRemplazar_OrdensService.pending, (state) => {
+        state.isLoading = true;
+        state.infoServiceOrder = false;
+        state.error = null;
+      })
+      .addCase(AnularRemplazar_OrdensService.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { newOrder, orderAnulado } = action.payload;
+        const indexOrderToAnular = state.registered.findIndex(
+          (item) => item._id === orderAnulado._id
+        );
+
+        if (indexOrderToAnular !== -1) {
+          const updatedOrder = state.registered[indexOrderToAnular];
+          updatedOrder.estadoPrenda = orderAnulado.estadoPrenda;
+        }
+
+        state.registered.push(newOrder);
+
+        state.lastRegister = newOrder;
+      })
+      .addCase(AnularRemplazar_OrdensService.rejected, (state, action) => {
+        state.isLoading = false;
+        state.infoServiceOrder = false;
+        state.error = action.error.message;
       })
       // List for Date Range
       .addCase(GetOrdenServices_DateRange.pending, (state) => {
@@ -255,37 +416,20 @@ const service_order = createSlice({
         state.isLoading = false;
         state.infoServiceOrder = false;
         state.error = action.error.message;
-      })
-      // Cancelar Entrega
-      .addCase(CancelEntrega_OrdenService.pending, (state) => {
-        state.isLoading = true;
-        state.infoServiceOrder = false;
-        state.error = null;
-      })
-      .addCase(CancelEntrega_OrdenService.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const indexRegistered = state.registered.findIndex(
-          (item) => item._id === action.payload._id
-        );
-        if (indexRegistered !== -1)
-          state.registered[indexRegistered] = action.payload;
-        else state.registered.push(action.payload);
-      })
-      .addCase(CancelEntrega_OrdenService.rejected, (state, action) => {
-        state.isLoading = false;
-        state.infoServiceOrder = false;
-        state.error = action.error.message;
       });
   },
 });
 
 export const {
-  setOrderServiceId,
   setLastRegister,
   updateNotaOrden,
+  updateDetalleOrden,
+  updateFinishReserva,
+  updateEntregaOrden,
+  updateCancelarEntregaOrden,
+  updateAnulacionOrden,
   updateLastRegister,
   LS_newOrder,
-  LS_updateOrder,
   LS_updateListOrder,
   LS_changeListPago,
   LS_changePagoOnOrden,

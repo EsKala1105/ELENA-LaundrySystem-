@@ -20,6 +20,7 @@ import {
   politicaAbandono,
 } from "../../../../../../../services/global";
 import { useSelector } from "react-redux";
+import { Notify } from "../../../../../../../utils/notify/Notify";
 
 const Ticket = React.forwardRef((props, ref) => {
   const sizePaper80 = true;
@@ -29,6 +30,7 @@ const Ticket = React.forwardRef((props, ref) => {
   const [infoPuntosCli, setInfoPuntosCli] = useState(null);
 
   const InfoServicios = useSelector((state) => state.servicios.listServicios);
+  const ListClientes = useSelector((state) => state.clientes.listClientes);
   const InfoCategorias = useSelector(
     (state) => state.categorias.listCategorias
   );
@@ -62,26 +64,16 @@ const Ticket = React.forwardRef((props, ref) => {
       );
       return response.data;
     } catch (error) {
+      Notify(
+        "CUPON ENTREGADO NO ENCONTRADO",
+        "Promocion fue Eliminada",
+        "warning"
+      );
+
       // Maneja los errores aquí
       console.error(
         `No se pudo obtener información de la promoción - ${error}`
       );
-      throw error; // Lanza el error para que pueda ser capturado por Promise.all
-    }
-  };
-
-  const handleGetInfoPuntosCliente = async (dni) => {
-    try {
-      const response = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/lava-ya/get-specific-cliente/${dni}`
-      );
-      return response.data;
-    } catch (error) {
-      // Maneja los errores aquí
-      console.error(`No se pudo obtener información de la puntos - ${error}`);
-      throw error; // Lanza el error para que pueda ser capturado por Promise.all
     }
   };
 
@@ -137,45 +129,42 @@ const Ticket = React.forwardRef((props, ref) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (infoOrden?.gift_promo.length > 0) {
-        const promos = infoOrden.gift_promo;
-
-        try {
+      setSPago(handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto));
+      if (infoOrden) {
+        if (infoOrden?.gift_promo.length > 0) {
           const results = await Promise.all(
-            promos.map(async (promo) => {
-              return await handleGetInfoPromo(promo.codigoCupon);
+            infoOrden.gift_promo.map(async (promo) => {
+              try {
+                return await handleGetInfoPromo(promo.codigoCupon);
+              } catch {
+                return null; // Retorna null si hay un error
+              }
             })
           );
 
-          setListPromos(results);
-        } catch (error) {
-          console.error(
-            "Error al obtener información de las promociones:",
-            error
-          );
-        }
-      }
-      if (
-        infoOrden?.descuento > 0 &&
-        infoOrden?.dni &&
-        infoOrden?.modoDescuento === "Puntos"
-      ) {
-        try {
-          const res = await handleGetInfoPuntosCliente(infoOrden?.dni);
-          setInfoPuntosCli(res);
-        } catch (error) {
-          console.error("Error al obtener información de las Puntos :", error);
+          // Filtrar resultados no válidos
+          setListPromos(results.filter((result) => result));
         }
       }
     };
 
     fetchData();
   }, [infoOrden]);
+
   useEffect(() => {
     if (infoOrden) {
-      setSPago(handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto));
+      if (
+        infoOrden.descuento > 0 &&
+        infoOrden.idCliente &&
+        infoOrden.modoDescuento === "Puntos"
+      ) {
+        const infoCliente = ListClientes.find(
+          (cliente) => cliente._id === infoOrden.idCliente
+        );
+        setInfoPuntosCli(infoCliente);
+      }
     }
-  }, [infoOrden]);
+  }, [infoOrden, ListClientes]);
 
   return (
     <>

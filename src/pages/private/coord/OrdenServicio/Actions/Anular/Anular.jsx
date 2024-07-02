@@ -7,11 +7,18 @@ import React from "react";
 import * as Yup from "yup";
 import { DateCurrent } from "../../../../../../utils/functions";
 import "./anular.scss";
+import SwtichDimension from "../../../../../../components/SwitchDimension/SwitchDimension";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { PrivateRoutes } from "../../../../../../models";
 
-const Anular = ({ onReturn, onAnular }) => {
+const Anular = ({ onReturn, idOrden, onAnular }) => {
   const validationSchema = Yup.object().shape({
     motivo: Yup.string().required("Ingrese motivo de Anulacion"),
   });
+
+  const [modeAnulacion, setModeAnulacion] = useState("DIRECTA");
+  const navigate = useNavigate();
 
   const openModal = (values) => {
     let confirmationEnabled = true;
@@ -43,12 +50,27 @@ const Anular = ({ onReturn, onAnular }) => {
         }}
         validationSchema={validationSchema}
         onSubmit={(values, { setSubmitting }) => {
-          openModal(values);
+          if (modeAnulacion === "DIRECTA") {
+            openModal(values);
+          } else {
+            navigate(
+              `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.ANULAR_REMPLAZAR}/${idOrden}`,
+              { state: values }
+            );
+          }
           setSubmitting(false);
         }}
       >
         {({ handleSubmit, isSubmitting, errors, touched }) => (
           <Form onSubmit={handleSubmit} className="body-a">
+            <SwtichDimension
+              title="Tipo de Anulacion :"
+              onSwitch="DIRECTA"
+              offSwitch="REMPLAZAR"
+              name="sw-mode-anulacion"
+              defaultValue={modeAnulacion === "DIRECTA" ? true : false}
+              handleChange={setModeAnulacion}
+            />
             <div className="content-anuacion">
               <Field
                 placeholder="Motivo de la anulacion"

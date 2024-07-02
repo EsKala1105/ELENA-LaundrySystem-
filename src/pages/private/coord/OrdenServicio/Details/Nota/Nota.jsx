@@ -1,32 +1,30 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable no-unused-vars */
-import React, { useState, useRef, useEffect } from 'react';
-import { handleUpdateFactura } from '../../../../../../services/default.services';
-import './nota.scss';
+import React, { useState, useRef, useEffect } from "react";
+import "./nota.scss";
 
-import { modals } from '@mantine/modals';
-import { Text } from '@mantine/core';
-import { updateNotaOrden } from '../../../../../../redux/states/service_order';
-import { useDispatch, useSelector } from 'react-redux';
-import { Notify } from '../../../../../../utils/notify/Notify';
-import { UpdateOrdenServices } from '../../../../../../redux/actions/aOrdenServices';
+import { modals } from "@mantine/modals";
+import { Text } from "@mantine/core";
+import { useDispatch, useSelector } from "react-redux";
+import { Nota_OrdenService } from "../../../../../../redux/actions/aOrdenServices";
 
 const Nota = ({ onReturn, infOrden }) => {
   const dispatch = useDispatch();
-  const InfoUsuario = useSelector((state) => state.user.infoUsuario);
 
   const [notes, setNotes] = useState([]);
   const [idOrden, setIdOrden] = useState();
   const lastTextareaRef = useRef(null);
 
   const handleAddNote = () => {
-    const newNote = { id: notes.length + 1, text: '', show: true };
+    const newNote = { id: notes.length + 1, text: "", show: true };
     const updatedNotes = notes.map((note) => ({ ...note, show: false }));
     setNotes([...updatedNotes, newNote]);
   };
 
   const handleNoteChange = (id, newText) => {
-    const updatedNotes = notes.map((note) => (note.id === id ? { ...note, text: newText } : note));
+    const updatedNotes = notes.map((note) =>
+      note.id === id ? { ...note, text: newText } : note
+    );
     setNotes(updatedNotes);
   };
 
@@ -36,46 +34,42 @@ const Nota = ({ onReturn, infOrden }) => {
   };
 
   const toggleNoteVisibility = (id) => {
-    const updatedNotes = notes.map((note) => (note.id === id ? { ...note, show: !note.show } : note));
+    const updatedNotes = notes.map((note) =>
+      note.id === id ? { ...note, show: !note.show } : note
+    );
     setNotes(updatedNotes);
   };
 
-  const handleSaveNote = () => {
-    dispatch(
-      UpdateOrdenServices({
+  const handleSaveNote = async () => {
+    await dispatch(
+      Nota_OrdenService({
         id: idOrden,
-        infoOrden: {
-          notas: notes,
-        },
-        rol: InfoUsuario.rol,
+        infoNotas: notes,
       })
-    )
-      .then((respuesta) => {
-        if (respuesta) {
-          onReturn();
-          Notify('Nota Agregada Exitosamente', '', 'success');
-        }
-      })
-      .catch(() => {
-        onReturn();
-        Notify('Error', 'No se pudo registrar la NOTA', 'fail');
-      });
+    );
+    onReturn();
   };
 
   const openModal = () =>
     modals.openConfirmModal({
-      title: 'Notas de Orden de Servicio',
+      title: "Notas de Orden de Servicio",
       centered: true,
-      children: <Text size="sm">{'¿ Estas seguro de guardar esta nota(s) ?'}</Text>,
-      labels: { confirm: 'Si', cancel: 'No' },
-      confirmProps: { color: 'green' },
+      children: (
+        <Text size="sm">{"¿ Estas seguro de guardar esta nota(s) ?"}</Text>
+      ),
+      labels: { confirm: "Si", cancel: "No" },
+      confirmProps: { color: "green" },
       //onCancel: () => console.log("cancelado"),
       onConfirm: () => handleSaveNote(),
     });
 
   useEffect(() => {
     if (infOrden) {
-      setNotes(infOrden.notas.length > 0 ? infOrden.notas : [{ id: 1, text: '', show: true }]);
+      setNotes(
+        infOrden.notas.length > 0
+          ? infOrden.notas
+          : [{ id: 1, text: "", show: true }]
+      );
       setIdOrden(infOrden._id);
     }
   }, [infOrden]);
@@ -83,9 +77,8 @@ const Nota = ({ onReturn, infOrden }) => {
   useEffect(() => {
     if (lastTextareaRef.current) {
       lastTextareaRef.current.focus();
-      //lastTextareaRef.current.scrollIntoView({ behavior: 'smooth' }); // Mueve el scroll al último textarea
     }
-  }, [notes]); // Se ejecutará cuando notes cambie
+  }, [notes]);
 
   return (
     <div className="note-container">
@@ -95,24 +88,32 @@ const Nota = ({ onReturn, infOrden }) => {
             <div key={note.id} className="note">
               <div className="header-info">
                 <span> Nota {index + 1} :</span>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" className="btn-delete" onClick={() => handleDeleteNote(note.id)}>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <button
+                    type="button"
+                    className="btn-delete"
+                    onClick={() => handleDeleteNote(note.id)}
+                  >
                     <i className="fa-solid fa-trash" />
                   </button>
 
                   <button
                     type="button"
-                    className={note.show ? 'color-show' : 'color-hide'}
+                    className={note.show ? "color-show" : "color-hide"}
                     onClick={() => toggleNoteVisibility(note.id)}
                   >
-                    {note.show ? <i className="fa-solid fa-eye-slash" /> : <i className="fa-solid fa-eye" />}
+                    {note.show ? (
+                      <i className="fa-solid fa-eye-slash" />
+                    ) : (
+                      <i className="fa-solid fa-eye" />
+                    )}
                   </button>
                 </div>
               </div>
               <textarea
                 id={note.id}
                 ref={index === notes.length - 1 ? lastTextareaRef : null}
-                className={note.show ? 'show' : 'hide'}
+                className={note.show ? "show" : "hide"}
                 // cols="20"
                 // rows="10"
                 defaultValue={note.text}

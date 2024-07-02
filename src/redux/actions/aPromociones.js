@@ -63,17 +63,18 @@ export const DeletePromocion = createAsyncThunk(
   "promocion/DeletePromocion ",
   async (id) => {
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/eliminar-promocion`,
-        {
-          id,
-        }
+      const response = await axios.delete(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/lava-ya/eliminar-promocion/${id}`
       );
 
       const data = response.data;
+      const { info } = data;
+
       socket.emit("client:cPromotions", data);
       Notify("Elimnacion Exitosa", "", "success");
-      return data;
+      return info;
     } catch (error) {
       console.log(error.response.data.mensaje);
       Notify("Error", "No se pudo eliminar Promocion", "fail");

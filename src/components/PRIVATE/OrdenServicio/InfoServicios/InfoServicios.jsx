@@ -14,12 +14,13 @@ import ValidIco from "../../../ValidIco/ValidIco";
 import { formatThousandsSeparator } from "../../../../utils/functions";
 
 const InfoServicios = ({
+  mode,
   paso,
   descripcion,
   changeValue,
   iCliente,
   values,
-  iEdit,
+  onDescuento,
   iDelivery,
   iServicios,
   iPuntos,
@@ -45,7 +46,6 @@ const InfoServicios = ({
           ? true
           : false
         : false;
-    // const isEditSaved = iEdit?.estado === "registrado" ? true : false;
     const isEditSaved = false;
 
     const newRow = {
@@ -109,9 +109,9 @@ const InfoServicios = ({
   };
 
   useEffect(() => {
-    const subtotal = Number(calculateTotalNeto(values.items).toFixed(2));
+    const subtotal = Number(calculateTotalNeto(values.Items).toFixed(2));
     changeValue("subTotal", subtotal);
-  }, [values.items]);
+  }, [values.Items]);
 
   return (
     <div className="info-servicios">
@@ -121,36 +121,36 @@ const InfoServicios = ({
       </div>
       <div className="body">
         <div className="actions">
-          <div className="button-actions">
-            {iNegocio.itemsAtajos.length > 0
-              ? iNegocio.itemsAtajos.map((items, index) => {
-                  const IService = iServicios.find(
-                    (service) => service._id === items
-                  );
+          {mode !== "UPDATE" ? (
+            <div className="button-actions">
+              {iNegocio.itemsAtajos.length > 0
+                ? iNegocio.itemsAtajos.map((items, index) => {
+                    const IService = iServicios.find(
+                      (service) => service._id === items
+                    );
 
-                  return (
-                    <BotonModel
-                      key={index}
-                      name={`Agregar ${IService?.nombre}`}
-                      disabled={
-                        iEdit ? (iEdit.modeEditAll ? false : true) : false
-                      }
-                      listenClick={() => {
-                        changeValue("items", [
-                          ...values.items,
-                          addRowGarment(IService?._id),
-                        ]);
-                      }}
-                    />
-                  );
-                })
-              : null}
-          </div>
+                    return (
+                      <BotonModel
+                        key={index}
+                        name={`Agregar ${IService?.nombre}`}
+                        listenClick={() => {
+                          changeValue("Items", [
+                            ...values.Items,
+                            addRowGarment(IService?._id),
+                          ]);
+                        }}
+                      />
+                    );
+                  })
+                : null}
+            </div>
+          ) : null}
+
           <InputSelectedPrenda
+            disabled={mode === "UPDATE"}
             listenClick={(info) => {
-              changeValue("items", [...values.items, addRowGarment(info)]);
+              changeValue("Items", [...values.Items, addRowGarment(info)]);
             }}
-            disabled={iEdit ? (iEdit.modeEditAll ? false : true) : false}
             tabI={"7"}
           />
         </div>
@@ -166,21 +166,21 @@ const InfoServicios = ({
               </tr>
             </thead>
             <tbody>
-              {values.items.map((row, index) => (
+              {values.Items.map((row, index) => (
                 <tr key={index}>
                   <td>
                     <NumberInput
                       name={`items.${index}.cantidad`}
                       className="txtCantidad"
                       disabled={row.disable.cantidad}
-                      value={+values.items[index].cantidad || ""}
+                      value={+values.Items[index].cantidad || ""}
                       formatter={(value) => formatThousandsSeparator(value)}
                       onChange={(value) => {
-                        const price = values.items[index].price || 0;
+                        const price = values.Items[index].price || 0;
                         const newTotal = value * price;
-                        changeValue(`items.${index}.cantidad`, value);
+                        changeValue(`Items.${index}.cantidad`, value);
                         changeValue(
-                          `items.${index}.total`,
+                          `Items.${index}.total`,
                           +newTotal.toFixed(2)
                         );
                       }}
@@ -192,7 +192,7 @@ const InfoServicios = ({
                       autoFocus={true}
                       required
                     />
-                    {values.items[index].cantidad < 0.1 &&
+                    {values.Items[index].cantidad < 0.1 &&
                       ValidIco({ mensaje: "La cantidad debe ser mayor a 0.1" })}
                   </td>
                   <td>
@@ -200,15 +200,15 @@ const InfoServicios = ({
                       type="text"
                       className="txtProducto"
                       disabled={row.disable.item}
-                      name={`items.${index}.item`}
+                      name={`Items.${index}.item`}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         if (newValue.length <= 15) {
-                          changeValue(`items.${index}.item`, newValue);
+                          changeValue(`Items.${index}.item`, newValue);
                         }
                       }}
                       autoComplete="off"
-                      value={values.items[index].item}
+                      value={values.Items[index].item}
                       required
                     />
                   </td>
@@ -217,8 +217,8 @@ const InfoServicios = ({
                       <div className="textarea-container">
                         <textarea
                           rows={1}
-                          id={`items.${index}.descripcion`}
-                          name={`items.${index}.descripcion`}
+                          id={`Items.${index}.descripcion`}
+                          name={`Items.${index}.descripcion`}
                           onChange={(e) => {
                             const inputValue = e.target.value;
 
@@ -233,10 +233,10 @@ const InfoServicios = ({
                               : "";
 
                             changeValue(
-                              `items.${index}.descripcion`,
+                              `Items.${index}.descripcion`,
                               updatedValue
                             );
-                            changeValue(`items.${index}.expanded`, true);
+                            changeValue(`Items.${index}.expanded`, true);
 
                             handleTextareaHeight(e.target);
                           }}
@@ -245,13 +245,13 @@ const InfoServicios = ({
                               event.preventDefault();
 
                               // Añade el check de "✔" al texto existente
-                              const updatedValue = `${values.items[index].descripcion}\n✔ `;
+                              const updatedValue = `${values.Items[index].descripcion}\n✔ `;
                               changeValue(
-                                `items.${index}.descripcion`,
+                                `Items.${index}.descripcion`,
                                 updatedValue
                               );
 
-                              changeValue(`items.${index}.expanded`, true);
+                              changeValue(`Items.${index}.expanded`, true);
                               const scrollHeight = event.target.scrollHeight;
                               event.target.style.height = `${
                                 scrollHeight + 30
@@ -259,23 +259,23 @@ const InfoServicios = ({
                             }
                           }}
                           disabled={row.disable.descripcion}
-                          value={values.items[index].descripcion}
+                          value={values.Items[index].descripcion}
                           className={`${
-                            values.items[index].expanded ? "expanded" : ""
+                            values.Items[index].expanded ? "expanded" : ""
                           }`}
                         />
                         <div
                           className="expand-button"
                           onClick={() => {
                             changeValue(
-                              `items.${index}.expanded`,
-                              !values.items[index].expanded
+                              `Items.${index}.expanded`,
+                              !values.Items[index].expanded
                             );
 
                             handleScrollTop(`items.${index}.descripcion`);
                           }}
                         >
-                          {values.items[index].expanded ? (
+                          {values.Items[index].expanded ? (
                             <i className="fa-solid fa-chevron-up" />
                           ) : (
                             <i className="fa-solid fa-chevron-down" />
@@ -286,13 +286,13 @@ const InfoServicios = ({
                   </td>
                   <td>
                     <NumberInput
-                      name={`items.${index}.total`}
+                      name={`Items.${index}.total`}
                       className="txtTotal"
                       disabled={row.disable.total}
-                      value={+values.items[index].total}
+                      value={+values.Items[index].total}
                       formatter={(value) => formatThousandsSeparator(value)}
                       onChange={(value) => {
-                        changeValue(`items.${index}.total`, value);
+                        changeValue(`Items.${index}.total`, value);
                       }}
                       precision={2}
                       min={0}
@@ -306,12 +306,12 @@ const InfoServicios = ({
                     className="space-action"
                     onClick={() => {
                       if (
-                        (!iEdit || iEdit?.estado === "reservado") &&
-                        values.items[index].identificador !== iDelivery?._id
+                        values.Items[index].identificador !== iDelivery?._id &&
+                        mode !== "UPDATE"
                       ) {
-                        const updatedItems = [...values.items];
+                        const updatedItems = [...values.Items];
                         updatedItems.splice(index, 1);
-                        changeValue("items", updatedItems);
+                        changeValue("Items", updatedItems);
                       }
                     }}
                   >
@@ -324,47 +324,53 @@ const InfoServicios = ({
             </tbody>
             <tfoot>
               <tr style={{ marginTop: "10px" }}>
-                <td>
-                  {iCliente &&
-                  Object.keys(iCliente).length > 0 &&
-                  values.modoDescuento === "Puntos" ? (
-                    <div className="input-number dsc">
-                      <NumberInput
-                        value={+values.cargosExtras.beneficios.puntos}
-                        label={`Descuento x Puntos -  Max(${iCliente.scoreTotal})`}
-                        description={`Por cada ${iPuntos.score} puntos -  ${simboloMoneda} ${iPuntos.valor} de descuento`}
-                        max={parseInt(iCliente?.scoreTotal)}
-                        formatter={(value) => formatThousandsSeparator(value)}
-                        min={0}
-                        step={1}
-                        hideControls={true}
-                        onChange={(e) => {
-                          const data = iCliente?.scoreTotal < e ? false : true;
-                          changeValue(
-                            "cargosExtras.descuentos.puntos",
-                            data ? Number(MontoxPoints(e).toFixed(2)) : 0
-                          );
-                          changeValue("cargosExtras.beneficios.puntos", e);
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div style={{ position: "absolute" }}>
-                      {iCliente ? (
-                        <>
-                          <label>
-                            Total de Puntos : ( {iCliente?.scoreTotal} )
-                          </label>
-                          <br />
-                          <span>
-                            Por cada {iPuntos.score} puntos - {simboloMoneda}{" "}
-                            {iPuntos.valor} de descuento
-                          </span>
-                        </>
-                      ) : null}
-                    </div>
-                  )}
-                </td>
+                {mode !== "UPDATE" ? (
+                  <td>
+                    {iCliente &&
+                    Object.keys(iCliente).length > 0 &&
+                    values.modoDescuento === "Puntos" ? (
+                      <div className="input-number dsc">
+                        <NumberInput
+                          value={+values.cargosExtras.beneficios.puntos}
+                          label={`Descuento x Puntos -  Max(${iCliente.scoreTotal})`}
+                          description={`Por cada ${iPuntos.score} puntos -  ${simboloMoneda} ${iPuntos.valor} de descuento`}
+                          max={parseInt(iCliente?.scoreTotal)}
+                          formatter={(value) => formatThousandsSeparator(value)}
+                          min={0}
+                          step={1}
+                          disabled={mode === "UPDATE"}
+                          hideControls={true}
+                          onChange={(e) => {
+                            const data =
+                              iCliente?.scoreTotal < e ? false : true;
+                            changeValue(
+                              "cargosExtras.descuentos.puntos",
+                              data ? Number(MontoxPoints(e).toFixed(2)) : 0
+                            );
+                            changeValue("cargosExtras.beneficios.puntos", e);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div style={{ position: "absolute" }}>
+                        {iCliente ? (
+                          <>
+                            <label>
+                              Total de Puntos : ( {iCliente?.scoreTotal} )
+                            </label>
+                            <br />
+                            <span>
+                              Por cada {iPuntos.score} puntos - {simboloMoneda}{" "}
+                              {iPuntos.valor} de descuento
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
+                    )}
+                  </td>
+                ) : (
+                  <td></td>
+                )}
                 <td>Subtotal :</td>
                 <td>{formatThousandsSeparator(values.subTotal, true)}</td>
                 <td></td>
@@ -391,7 +397,7 @@ const InfoServicios = ({
               </tr>
               <tr>
                 <td></td>
-                {values.onDescuento ? (
+                {onDescuento ? (
                   <>
                     <td>Descuento x ({values.modoDescuento})</td>
                     <td>{formatThousandsSeparator(values.descuento, true)}</td>
@@ -408,8 +414,8 @@ const InfoServicios = ({
               </tr>
             </tfoot>
           </table>
-          {error.items && touched.items && (
-            <div className="error-message">{error.items}</div>
+          {error.Items && touched.Items && (
+            <div className="error-message">{error.Items}</div>
           )}
         </div>
       </div>

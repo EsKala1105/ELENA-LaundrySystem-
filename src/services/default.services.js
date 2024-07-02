@@ -102,19 +102,6 @@ export const GetDonadoId = async (id) => {
   }
 };
 
-export const handleUpdateFactura = async (id, info) => {
-  try {
-    const response = await axios.put(
-      `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/update-factura/${id}`,
-      info
-    );
-    return response.data;
-  } catch (error) {
-    // Puedes manejar los errores aquí
-    throw new Error(`No se Registro la Orden - ${error.response.data.mensaje}`);
-  }
-};
-
 export const handleUseCupon = async (codigo) => {
   try {
     await axios.get(`${baseURL}/use-cupon/${codigo}`);

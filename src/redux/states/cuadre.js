@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { GetCuadre } from "../actions/aCuadre";
+import { GetCuadre, GetPagos_OnCuadreToday } from "../actions/aCuadre";
 import { MONTOS_BASE } from "../../services/global";
 
 // Función auxiliar para actualizar un registro en un array
@@ -20,16 +20,12 @@ const cuadre = createSlice({
     infoBase: null,
     cuadreActual: null,
     registroNoCuadrados: { gastos: [], pagos: [] },
+    paysToDay: [],
+    spendToDay: [],
     isLoading: false,
     error: null,
   },
   reducers: {
-    LS_updateCuadre: (state, action) => {
-      state.infoCuadre = action.payload;
-    },
-    updateLastCuadre: (state, action) => {
-      state.lastCuadre = action.payload;
-    },
     updateRegistrosNCuadrados: (state, action) => {
       const { tipoMovimiento, data } = action.payload;
       const { tipo, info } = data;
@@ -98,18 +94,39 @@ const cuadre = createSlice({
         } else {
           state.cuadreActual = cuadreActual;
         }
+
+        const IdsPagos = lastCuadre
+          ? lastCuadre.Pagos.map((order) => order._id)
+          : [];
+
+        const IdsGastos = lastCuadre
+          ? lastCuadre.Gastos.map((order) => order._id)
+          : [];
+
+        state.paysToDay = [...new Set([...state.paysToDay, ...IdsPagos])];
+        state.spendToDay = [...new Set([...state.spendToDay, ...IdsGastos])];
       })
       .addCase(GetCuadre.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error.message;
+      })
+      // Get Pagos del Cuadre del Hoy
+      .addCase(GetPagos_OnCuadreToday.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(GetPagos_OnCuadreToday.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const { Pagos, Gastos } = action.payload;
+        state.paysToDay = Pagos;
+        state.spendToDay = Gastos;
+      })
+      .addCase(GetPagos_OnCuadreToday.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.error.message;
       });
   },
 });
 
-export const {
-  LS_updateCuadre,
-  updateLastCuadre,
-  clearInfoCuadre,
-  updateRegistrosNCuadrados,
-} = cuadre.actions;
+export const { clearInfoCuadre, updateRegistrosNCuadrados } = cuadre.actions;
 export default cuadre.reducer;
